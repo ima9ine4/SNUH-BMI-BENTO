@@ -1,0 +1,112 @@
+<script>
+    import CategoryNode from './CategoryNode.svelte';
+    export let cat;
+    export let expanded;
+    export let toggle;
+    export let isLeaf;
+    export let handleDragStart;
+    export let depth = 1;
+    export let search = '';
+    export let highlight = (text, search) => text;
+</script>
+
+<li class="mb-1 select-none">
+    {#if cat.columns}
+        <button class="flex items-center w-full px-2 py-1 rounded text-gray-800 hover:bg-blue-50 transition-colors font-medium"
+                style="padding-left: {depth * 12}px; font-size: {depth === 1 ? '1rem' : '0.97rem'}; font-weight: {depth === 1 ? 500 : 400};"
+                on:click={() => toggle(cat.name)}>
+            <svg class="w-4 h-4 text-gray-400 transform transition-transform {expanded[cat.name] ? 'rotate-90' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+            <span class="flex-1 ml-2 text-left">{@html highlight(cat.name, search)}</span>
+        </button>
+        {#if expanded[cat.name]}
+            <ul class="ml-2 mt-1 border-l border-gray-100 pl-2">
+                {#each cat.columns as child}
+                    <CategoryNode
+                        cat={child}
+                        {expanded}
+                        {toggle}
+                        {isLeaf}
+                        {handleDragStart}
+                        depth={depth + 1}
+                        {search}
+                        {highlight}
+                    />
+                {/each}
+            </ul>
+        {/if}
+    {:else}
+        <div class="flex items-center w-full">
+            <span
+                draggable="true"
+                on:dragstart={(e) => handleDragStart(e, cat)}
+                class="block w-full px-2 py-1 rounded text-gray-700 hover:bg-blue-100 transition-colors text-sm cursor-grab"
+                style="padding-left: {depth * 12}px; font-size: 0.97rem;"
+                role="button"
+                tabindex="0"
+            >
+                <div class="flex items-center justify-between w-full">
+                    <!-- 컬럼명 -->
+                    <span class="flex-1 text-left">
+                        {@html highlight(cat.name, search)}
+                    </span>
+                    <!-- 컬럼타입 -->
+                    {#if cat.type}
+                        <span class="ml-2 text-gray-400 text-xs flex items-center gap-1 group">
+                            <span class="text-zinc-400 text-xs opacity-0 group-hover:opacity-100 transition-opacity">
+                                {cat.type}
+                            </span>
+                            {#if cat.type === 'select'}
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke-width="2"/>
+                                    <path d="M9 12l2 2 4-4" stroke-width="2"/>
+                                </svg>
+                            {/if}
+                            {#if cat.type === 'date'}
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke-width="2"/>
+                                    <line x1="16" y1="2" x2="16" y2="6" stroke-width="2"/>
+                                    <line x1="8" y1="2" x2="8" y2="6" stroke-width="2"/>
+                                    <line x1="3" y1="10" x2="21" y2="10" stroke-width="2"/>
+                                </svg>
+                            {/if}
+                            {#if cat.type === 'datetime'}
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke-width="2"/>
+                                    <line x1="16" y1="2" x2="16" y2="6" stroke-width="2"/>
+                                    <line x1="8" y1="2" x2="8" y2="6" stroke-width="2"/>
+                                    <line x1="3" y1="10" x2="21" y2="10" stroke-width="2"/>
+                                    <circle cx="12" cy="14" r="2" stroke-width="2"/>
+                                    <line x1="12" y1="14" x2="12" y2="16" stroke-width="2"/>
+                                    <line x1="12" y1="14" x2="14" y2="14" stroke-width="2"/>
+                                </svg>
+                            {/if}
+                            {#if cat.type === 'lookup'}
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <rect x="3" y="3" width="18" height="18" stroke-width="2"/>
+                                    <line x1="3" y1="9" x2="21" y2="9" stroke-width="2"/>
+                                    <line x1="9" y1="3" x2="9" y2="21" stroke-width="2"/>
+                                    <line x1="15" y1="3" x2="15" y2="21" stroke-width="2"/>
+                                </svg>
+                            {/if}
+                            {#if cat.type === 'range'}
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <line x1="3" y1="12" x2="21" y2="12" stroke-width="2"/>
+                                    <circle cx="6" cy="12" r="2" fill="currentColor"/>
+                                    <circle cx="18" cy="12" r="2" fill="currentColor"/>
+                                    <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+                                </svg>
+                            {/if}
+                            {#if cat.type === 'Y/N'}
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <rect x="3" y="6" width="18" height="12" rx="2" ry="2" stroke-width="2"/>
+                                    <circle cx="9" cy="12" r="2" fill="currentColor"/>
+                                    <path d="M15 10l2 2-2 2" stroke-width="2"/>
+                                </svg>
+                            {/if}
+                        </span>
+                    {/if}
+                </div>
+            </span>
+        </div>
+    {/if}
+</li>
