@@ -144,7 +144,7 @@
     />
     <ul class="list-none p-0 w-full">
         {#each filteredCategories as cat}
-            <li>
+            <li class="mb-0 border-b border-gray-100">
                 <button
                 class="flex items-center w-full px-2 py-2 rounded-lg font-semibold text-gray-900 hover:bg-blue-50 transition-colors"
                 on:click={() => toggle(cat.table)}
