@@ -1,52 +1,6 @@
 <script>
     import CategoryNode from './CategoryNode.svelte';
-
-    const categories = [
-        {
-            table:"Person",
-            columns: [
-                {name: "person_id", type: "upload"},
-                {name: "gender_concept_id", type: "select"},
-                {name: "year_of_birth", type: "Y/N"},
-                {name: "month_of_birth", type: "date"},
-                {name: "day_of_birth", type: "date"},
-                {name: "birth_datetime", type: "datetime"},
-            ]
-        },
-        {
-            table:"수진",
-            columns: [
-                {name: "수진일자", type: "date"},
-                {name: "수진구분", type: "select"},
-                {name: "수진코드",
-                    columns: [
-                        {name: "수진코드1"},
-                        {name: "수진코드2", columns: [
-                            {name: "수진코드2-1", type: "lookup"},
-                            {name: "수진코드2-2"}
-                        ]},
-                        {name: "수진코드3", columns: [
-                            {name: "수진코드3-1"},
-                            {name: "수진코드3-2"}
-                        ]}
-                    ]
-                }
-            ]
-        },
-        {
-            table:"진단",
-            columns: [
-                {name: "진단일자"},
-                {name: "첫 진단일자"},
-                {name: "진료과", columns: [
-                    {name: "진단진료과"}
-                ]},
-                {name: "진단당시나이"},
-                {name: "진단명"},
-                {name: "진단명 (대)"}
-            ]
-        }
-    ]
+    import { categories } from '../data/categories.js';
 
     let expanded = {};
     for (const cat of categories) {
