@@ -8,6 +8,7 @@
     export let depth = 1;
     export let search = '';
     export let highlight = (text, search) => text;
+    export let tableName = null;
 </script>
 
 <li class="mb-1 select-none">
@@ -30,6 +31,7 @@
                         depth={depth + 1}
                         {search}
                         {highlight}
+                        {tableName}
                     />
                 {/each}
             </ul>
@@ -38,7 +40,7 @@
         <div class="flex items-center w-full">
             <span
                 draggable="true"
-                on:dragstart={(e) => handleDragStart(e, cat)}
+                on:dragstart={(e) => handleDragStart(e, cat, tableName)}
                 class="block w-full px-2 py-1 rounded text-gray-700 hover:bg-blue-100 transition-colors text-sm cursor-grab"
                 style="padding-left: {depth * 12}px; font-size: 0.97rem;"
                 role="button"
