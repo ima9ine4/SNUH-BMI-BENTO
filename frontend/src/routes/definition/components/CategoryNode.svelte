@@ -42,7 +42,7 @@
                 draggable="true"
                 on:dragstart={(e) => handleDragStart(e, cat, tableName)}
                 class="block w-full px-2 py-1 rounded text-gray-700 hover:bg-blue-100 transition-colors text-sm cursor-grab"
-                style="padding-left: {depth * 12}px; font-size: 0.97rem;"
+                style="padding-left: {depth * 12}px; font-size: 0.75rem;"
                 role="button"
                 tabindex="0"
             >

@@ -68,8 +68,13 @@
         return !item.columns;
     }
 
-    function handleDragStart(event, item) {
-        event.dataTransfer.setData('text/plain', item.table || item.name);
+    function handleDragStart(event, item, tableName = null) {
+        // 테이블명과 필드명을 JSON으로 전달
+        const dragData = {
+            tableName: tableName || item.table || '알 수 없음',
+            fieldName: item.name || item.table
+        };
+        event.dataTransfer.setData('text/plain', JSON.stringify(dragData));
     }
 
     function filterTree(tree, keyword) {
@@ -153,7 +158,7 @@
                     {#if cat.columns}
                         <svg class="w-5 h-5 text-gray-400 transform transition-transform {(search ? autoExpanded[cat.table] : expanded[cat.table]) ? 'rotate-90' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
                     {/if}
-                    <span class="flex-1 text-left ml-2">
+                    <span class="flex-1 text-left ml-2 text-sm">
                         {@html highlight(cat.table, search)}
                     </span>
                 </button>
@@ -165,10 +170,11 @@
                                 expanded={search ? autoExpanded : expanded}
                                 {toggle}
                                 {isLeaf}
-                                {handleDragStart}
+                                handleDragStart={(e, item) => handleDragStart(e, item, cat.table)}
                                 depth={1}
                                 search={search}
                                 highlight={highlight}
+                                tableName={cat.table}
                             />
                         {/each}
                     </ul>
