@@ -63,7 +63,7 @@
                                     <path d="M9 12l2 2 4-4" stroke-width="2"/>
                                 </svg>
                             {/if}
-                            {#if cat.type === 'date'}
+                            {#if cat.type === 'date' || cat.type === 'datetime'}
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke-width="2"/>
                                     <line x1="16" y1="2" x2="16" y2="6" stroke-width="2"/>
@@ -71,15 +71,10 @@
                                     <line x1="3" y1="10" x2="21" y2="10" stroke-width="2"/>
                                 </svg>
                             {/if}
-                            {#if cat.type === 'datetime'}
+                            {#if cat.type === 'upload'}
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke-width="2"/>
-                                    <line x1="16" y1="2" x2="16" y2="6" stroke-width="2"/>
-                                    <line x1="8" y1="2" x2="8" y2="6" stroke-width="2"/>
-                                    <line x1="3" y1="10" x2="21" y2="10" stroke-width="2"/>
-                                    <circle cx="12" cy="14" r="2" stroke-width="2"/>
-                                    <line x1="12" y1="14" x2="12" y2="16" stroke-width="2"/>
-                                    <line x1="12" y1="14" x2="14" y2="14" stroke-width="2"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 0l-2-2m2 2l2-2"/>
                                 </svg>
                             {/if}
                             {#if cat.type === 'lookup'}
@@ -99,11 +94,7 @@
                                 </svg>
                             {/if}
                             {#if cat.type === 'Y/N'}
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <rect x="3" y="6" width="18" height="12" rx="2" ry="2" stroke-width="2"/>
-                                    <circle cx="9" cy="12" r="2" fill="currentColor"/>
-                                    <path d="M15 10l2 2-2 2" stroke-width="2"/>
-                                </svg>
+                                <span class="w-4 h-4 flex items-center justify-center text-[7px] font-bold text-gray-400 border border-gray-400 rounded">Y/N</span>
                             {/if}
                         </span>
                     {/if}
