@@ -15,105 +15,6 @@ export const categories = [
         ]
     },
     {
-        table: "care_site",
-        columns: [
-            { name: "care_site_id", type: "lookup" },
-            { name: "care_site_name", type: "lookup" },
-            { name: "care_site_source_value", type: "lookup" },
-            { name: "location_id", type: "lookup" },
-            { name: "place_of_service_concept_id", type: "select" },
-            { name: "place_of_service_source_value", type: "lookup" }
-        ]
-    },
-    {
-        table: "cdm_source",
-        columns: [
-            { name: "cdm_etl_reference", type: "lookup" },
-            { name: "cdm_holder", type: "lookup" },
-            { name: "cdm_release_date", type: "date" },
-            { name: "cdm_source_abbreviation", type: "lookup" },
-            { name: "cdm_source_name", type: "lookup" },
-            { name: "cdm_version", type: "lookup" },
-            { name: "cdm_version_concept_id", type: "select" },
-            { name: "source_description", type: "lookup" },
-            { name: "source_documentation_reference", type: "lookup" },
-            { name: "source_release_date", type: "date" },
-            { name: "vocabulary_version", type: "lookup" }
-        ]
-    },
-    {
-        table: "cohort",
-        columns: [
-            { name: "cohort_definition_id", type: "lookup" },
-            { name: "cohort_end_date", type: "date" },
-            { name: "cohort_start_date", type: "date" },
-            { name: "subject_id", type: "lookup" }
-        ]
-    },
-    {
-        table: "cohort_definition",
-        columns: [
-            { name: "cohort_definition_description", type: "lookup" },
-            { name: "cohort_definition_id", type: "lookup" },
-            { name: "cohort_definition_name", type: "lookup" },
-            { name: "cohort_definition_syntax", type: "lookup" },
-            { name: "cohort_initiation_date", type: "date" },
-            { name: "definition_type_concept_id", type: "select" },
-            { name: "subject_concept_id", type: "select" }
-        ]
-    },
-    {
-        table: "concept",
-        columns: [
-            { name: "concept_class_id", type: "lookup" },
-            { name: "concept_code", type: "lookup" },
-            { name: "concept_id", type: "lookup" },
-            { name: "concept_name", type: "lookup" },
-            { name: "domain_id", type: "lookup" },
-            { name: "invalid_reason", type: "lookup" },
-            { name: "standard_concept", type: "lookup" },
-            { name: "valid_end_date", type: "date" },
-            { name: "valid_start_date", type: "date" },
-            { name: "vocabulary_id", type: "lookup" }
-        ]
-    },
-    {
-        table: "concept_ancestor",
-        columns: [
-            { name: "ancestor_concept_id", type: "lookup" },
-            { name: "descendant_concept_id", type: "lookup" },
-            { name: "max_levels_of_separation", type: "range" },
-            { name: "min_levels_of_separation", type: "range" }
-        ]
-    },
-    {
-        table: "concept_class",
-        columns: [
-            { name: "concept_class_concept_id", type: "select" },
-            { name: "concept_class_id", type: "lookup" },
-            { name: "concept_class_name", type: "lookup" }
-        ]
-    },
-    {
-        table: "concept_relationship",
-        columns: [
-            { name: "concept_id_1", type: "lookup" },
-            { name: "concept_id_2", type: "lookup" },
-            { name: "invalid_reason", type: "lookup" },
-            { name: "relationship_id", type: "lookup" },
-            { name: "valid_end_date", type: "date" },
-            { name: "valid_start_date", type: "date" }
-        ]
-    },
-    {
-        table: "concept_synonym",
-        columns: [
-            { name: "concept_id", type: "lookup" },
-            { name: "concept_synonym_name", type: "lookup" },
-            { name: "language_concept_id", type: "select" }
-        ]
-    },
-    {
         table: "condition_era",
         columns: [
             { name: "condition_concept_id", type: "select" },
@@ -150,33 +51,6 @@ export const categories = [
         ]
     },
     {
-        table: "cost",
-        columns: [
-            { name: "amount_allowed", type: "range" },
-            { name: "cost_domain_id", type: "lookup" },
-            { name: "cost_event_id", type: "lookup" },
-            { name: "cost_id", type: "lookup" },
-            { name: "cost_type_concept_id", type: "select" },
-            { name: "currency_concept_id", type: "select" },
-            { name: "drg_concept_id", type: "select" },
-            { name: "drg_source_value", type: "lookup" },
-            { name: "paid_by_patient", type: "range" },
-            { name: "paid_by_payer", type: "range" },
-            { name: "paid_by_primary", type: "range" },
-            { name: "paid_dispensing_fee", type: "range" },
-            { name: "paid_ingredient_cost", type: "range" },
-            { name: "paid_patient_coinsurance", type: "range" },
-            { name: "paid_patient_copay", type: "range" },
-            { name: "paid_patient_deductible", type: "range" },
-            { name: "payer_plan_period_id", type: "lookup" },
-            { name: "revenue_code_concept_id", type: "select" },
-            { name: "revenue_code_source_value", type: "lookup" },
-            { name: "total_charge", type: "range" },
-            { name: "total_cost", type: "range" },
-            { name: "total_paid", type: "range" }
-        ]
-    },
-    {
         table: "death",
         columns: [
             { name: "cause_concept_id", type: "select" },
@@ -210,14 +84,6 @@ export const categories = [
             { name: "unit_source_value", type: "lookup" },
             { name: "visit_detail_id", type: "lookup" },
             { name: "visit_occurrence_id", type: "lookup" }
-        ]
-    },
-    {
-        table: "domain",
-        columns: [
-            { name: "domain_concept_id", type: "select" },
-            { name: "domain_id", type: "lookup" },
-            { name: "domain_name", type: "lookup" }
         ]
     },
     {
@@ -278,23 +144,6 @@ export const categories = [
         ]
     },
     {
-        table: "drug_strength",
-        columns: [
-            { name: "amount_unit_concept_id", type: "select" },
-            { name: "amount_value", type: "range" },
-            { name: "box_size", type: "range" },
-            { name: "denominator_unit_concept_id", type: "select" },
-            { name: "denominator_value", type: "range" },
-            { name: "drug_concept_id", type: "lookup" },
-            { name: "ingredient_concept_id", type: "lookup" },
-            { name: "invalid_reason", type: "lookup" },
-            { name: "numerator_unit_concept_id", type: "select" },
-            { name: "numerator_value", type: "range" },
-            { name: "valid_end_date", type: "date" },
-            { name: "valid_start_date", type: "date" }
-        ]
-    },
-    {
         table: "episode",
         columns: [
             { name: "episode_concept_id", type: "select" },
@@ -310,41 +159,6 @@ export const categories = [
             { name: "episode_start_datetime", type: "datetime" },
             { name: "episode_type_concept_id", type: "select" },
             { name: "person_id", type: "lookup" }
-        ]
-    },
-    {
-        table: "episode_event",
-        columns: [
-            { name: "episode_event_field_concept_id", type: "select" },
-            { name: "episode_id", type: "lookup" },
-            { name: "event_id", type: "lookup" }
-        ]
-    },
-    {
-        table: "fact_relationship",
-        columns: [
-            { name: "domain_concept_id_1", type: "select" },
-            { name: "domain_concept_id_2", type: "select" },
-            { name: "fact_id_1", type: "lookup" },
-            { name: "fact_id_2", type: "lookup" },
-            { name: "relationship_concept_id", type: "select" }
-        ]
-    },
-    {
-        table: "location",
-        columns: [
-            { name: "address_1", type: "lookup" },
-            { name: "address_2", type: "lookup" },
-            { name: "city", type: "lookup" },
-            { name: "country_concept_id", type: "select" },
-            { name: "country_source_value", type: "lookup" },
-            { name: "county", type: "lookup" },
-            { name: "latitude", type: "range" },
-            { name: "location_id", type: "lookup" },
-            { name: "location_source_value", type: "lookup" },
-            { name: "longitude", type: "range" },
-            { name: "state", type: "lookup" },
-            { name: "zip", type: "lookup" }
         ]
     },
     {
@@ -374,20 +188,6 @@ export const categories = [
             { name: "value_source_value", type: "lookup" },
             { name: "visit_detail_id", type: "lookup" },
             { name: "visit_occurrence_id", type: "lookup" }
-        ]
-    },
-    {
-        table: "metadata",
-        columns: [
-            { name: "metadata_concept_id", type: "select" },
-            { name: "metadata_date", type: "date" },
-            { name: "metadata_datetime", type: "datetime" },
-            { name: "metadata_id", type: "lookup" },
-            { name: "metadata_type_concept_id", type: "select" },
-            { name: "name", type: "lookup" },
-            { name: "value_as_concept_id", type: "select" },
-            { name: "value_as_number", type: "range" },
-            { name: "value_as_string", type: "lookup" }
         ]
     },
     {
@@ -445,25 +245,6 @@ export const categories = [
             { name: "reg_dt", type: "date" },
             { name: "visit_detail_id", type: "lookup" },
             { name: "visit_occurrence_id", type: "lookup" }
-        ]
-    },
-    {
-        table: "note_nlp",
-        columns: [
-            { name: "lexical_variant", type: "lookup" },
-            { name: "nlp_date", type: "date" },
-            { name: "nlp_datetime", type: "datetime" },
-            { name: "nlp_system", type: "lookup" },
-            { name: "note_id", type: "lookup" },
-            { name: "note_nlp_concept_id", type: "select" },
-            { name: "note_nlp_id", type: "lookup" },
-            { name: "note_nlp_source_concept_id", type: "select" },
-            { name: "offset", type: "lookup" },
-            { name: "section_concept_id", type: "select" },
-            { name: "snippet", type: "lookup" },
-            { name: "term_exists", type: "lookup" },
-            { name: "term_modifiers", type: "lookup" },
-            { name: "term_temporal", type: "lookup" }
         ]
     },
     {
@@ -571,24 +352,6 @@ export const categories = [
         ]
     },
     {
-        table: "provider",
-        columns: [
-            { name: "care_site_id", type: "lookup" },
-            { name: "dea", type: "lookup" },
-            { name: "gender_concept_id", type: "select" },
-            { name: "gender_source_concept_id", type: "select" },
-            { name: "gender_source_value", type: "lookup" },
-            { name: "npi", type: "lookup" },
-            { name: "provider_id", type: "lookup" },
-            { name: "provider_name", type: "lookup" },
-            { name: "provider_source_value", type: "lookup" },
-            { name: "specialty_concept_id", type: "select" },
-            { name: "specialty_source_concept_id", type: "select" },
-            { name: "specialty_source_value", type: "lookup" },
-            { name: "year_of_birth", type: "range" }
-        ]
-    },
-    {
         table: "relationship",
         columns: [
             { name: "defines_ancestry", type: "lookup" },
@@ -597,38 +360,6 @@ export const categories = [
             { name: "relationship_id", type: "lookup" },
             { name: "relationship_name", type: "lookup" },
             { name: "reverse_relationship_id", type: "lookup" }
-        ]
-    },
-    {
-        table: "source_to_concept_map",
-        columns: [
-            { name: "invaild_reason", type: "lookup" },
-            { name: "source_code", type: "lookup" },
-            { name: "source_code_description", type: "lookup" },
-            { name: "source_concept_id", type: "lookup" },
-            { name: "source_vocabulary_id", type: "lookup" },
-            { name: "target_concept_id", type: "lookup" },
-            { name: "target_vocabulary_id", type: "lookup" },
-            { name: "vaild_start_date", type: "date" },
-            { name: "valid_end_date", type: "date" }
-        ]
-    },
-    {
-        table: "source_to_concept_map_history",
-        columns: [
-            { name: "domain", type: "lookup" },
-            { name: "mappedby", type: "lookup" },
-            { name: "mappingstatus", type: "select" },
-            { name: "modifieddate", type: "datetime" },
-            { name: "note", type: "lookup" },
-            { name: "omop_concept_id", type: "select" },
-            { name: "pc_dept", type: "lookup" },
-            { name: "primarychecker", type: "lookup" },
-            { name: "remark", type: "lookup" },
-            { name: "secondarychecker", type: "lookup" },
-            { name: "snuh_id", type: "lookup" },
-            { name: "source_name", type: "lookup" },
-            { name: "vocabulary", type: "lookup" }
         ]
     },
     {
@@ -696,16 +427,6 @@ export const categories = [
             { name: "visit_start_date", type: "date" },
             { name: "visit_start_datetime", type: "datetime" },
             { name: "visit_type_concept_id", type: "select" }
-        ]
-    },
-    {
-        table: "vocabulary",
-        columns: [
-            { name: "vocabulary_concept_id", type: "select" },
-            { name: "vocabulary_id", type: "lookup" },
-            { name: "vocabulary_name", type: "lookup" },
-            { name: "vocabulary_reference", type: "lookup" },
-            { name: "vocabulary_version", type: "lookup" }
         ]
     }
 ]; 
