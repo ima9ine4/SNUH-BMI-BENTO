@@ -508,15 +508,29 @@
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-3">
                                 {#if row.type !== 'initial'}
-                                    <button 
-                                        class="px-2.5 py-1 bg-white bg-opacity-20 rounded-full text-xs font-medium hover:bg-opacity-30 transition-colors"
-                                        on:click={() => toggleRowType(row.id)}
-                                    >
-                                        {row.type === 'NOT' ? 'NOT' : 'AND'}
-                                    </button>
+                                    <!-- 토글 스위치 -->
+                                    <div class="flex items-center gap-2">
+                                        <button 
+                                            class="relative inline-flex h-7 w-[76px] items-center rounded-full transition-all duration-200 ease-in-out focus:outline-none {row.type === 'NOT' ? 'bg-red-400' : row.id>2 ? 'bg-blue-500' : 'bg-blue-900'}"
+                                            on:click={() => toggleRowType(row.id)}
+                                        >
+                                            <!-- 배경 텍스트 -->
+                                            <span class="absolute left-2 text-xs font-medium text-white {row.type === 'AND' ? 'opacity-100' : 'opacity-50'}">AND</span>
+                                            <span class="absolute right-2 text-xs font-medium text-white {row.type === 'NOT' ? 'opacity-100' : 'opacity-50'}">NOT</span>
+                                            
+                                            <!-- 슬라이더 -->
+                                            <span class="inline-block h-5 w-8 transform rounded-full bg-white shadow-lg transition-transform duration-200 ease-in-out {row.type === 'NOT' ? 'translate-x-10' : 'translate-x-1'} flex items-center justify-center">
+                                                <span class="text-xs font-bold {row.type === 'NOT' ? 'text-red-500' : 'text-blue-500'}">
+                                                    {row.type === 'NOT' ? 'NOT' : 'AND'}
+                                                </span>
+                                            </span>
+                                        </button>
+                                    </div>
                                 {:else}
-                                    <div class="px-2.5 py-1 bg-white bg-opacity-20 rounded-full text-xs font-medium transition-colors">
-                                        <span class="text-xs font-semibold">Initial</span>
+                                    <div class="flex items-center gap-2">
+                                        <div class="px-3 py-1 bg-white bg-opacity-20 rounded-full text-xs font-medium border border-white border-opacity-30">
+                                            <span class="text-xs font-semibold">Initial</span>
+                                        </div>
                                     </div>
                                 {/if}
                                 <div class="flex items-center gap-2">
