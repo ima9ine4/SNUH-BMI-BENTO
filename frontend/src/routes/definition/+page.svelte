@@ -498,7 +498,7 @@
         </header>
 
         <!-- 메인 콘텐츠 영역 -->
-        <main class="flex-1 overflow-y-auto px-5 space-y-4 pb-24 pt-16">
+        <main class="flex-1 overflow-y-auto px-5 space-y-4 pb-24 pt-[75px]">
             <!-- 쿼리 단계 카드들 -->
             {#each rows as row, rowIndex}
                 {@const style = getRowStyle(rowIndex)}
