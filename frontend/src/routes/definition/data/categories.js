@@ -10,7 +10,6 @@ export const categories = [
             { name: "event_field_concept_id", type: "select" },
             { name: "event_id", type: "lookup" },
             { name: "file_path", type: "lookup" },
-            { name: "person_id", type: "lookup" },
             { name: "visit_occurrence_id", type: "lookup" }
         ]
     },
@@ -22,7 +21,6 @@ export const categories = [
             { name: "condition_era_id", type: "lookup" },
             { name: "condition_era_start_date", type: "date" },
             { name: "condition_occurrence_count", type: "range" },
-            { name: "person_id", type: "lookup" }
         ]
     },
     {
@@ -43,7 +41,6 @@ export const categories = [
             { name: "ext_cond_source_value_kcd", type: "lookup" },
             { name: "ext_cond_type_1_concept_id", type: "select" },
             { name: "ext_cond_type_2_concept_id", type: "select" },
-            { name: "person_id", type: "lookup" },
             { name: "provider_id", type: "lookup" },
             { name: "stop_reason", type: "lookup" },
             { name: "visit_detail_id", type: "lookup" },
@@ -59,7 +56,6 @@ export const categories = [
             { name: "death_date", type: "date" },
             { name: "death_datetime", type: "datetime" },
             { name: "death_type_concept_id", type: "select" },
-            { name: "person_id", type: "lookup" }
         ]
     },
     {
@@ -74,7 +70,6 @@ export const categories = [
             { name: "device_source_concept_id", type: "select" },
             { name: "device_source_value", type: "lookup" },
             { name: "device_type_concept_id", type: "select" },
-            { name: "person_id", type: "lookup" },
             { name: "production_id", type: "lookup" },
             { name: "provider_id", type: "lookup" },
             { name: "quantity", type: "range" },
@@ -94,7 +89,6 @@ export const categories = [
             { name: "dose_era_start_date", type: "date" },
             { name: "dose_value", type: "range" },
             { name: "drug_concept_id", type: "select" },
-            { name: "person_id", type: "lookup" },
             { name: "unit_concept_id", type: "select" }
         ]
     },
@@ -107,7 +101,6 @@ export const categories = [
             { name: "drug_era_start_date", type: "date" },
             { name: "drug_exposure_count", type: "range" },
             { name: "gap_days", type: "range" },
-            { name: "person_id", type: "lookup" }
         ]
     },
     {
@@ -129,7 +122,6 @@ export const categories = [
             { name: "effective_drug_dose", type: "lookup" },
             { name: "ext_quantity", type: "range" },
             { name: "lot_number", type: "lookup" },
-            { name: "person_id", type: "lookup" },
             { name: "provider_id", type: "lookup" },
             { name: "quantity", type: "range" },
             { name: "refills", type: "range" },
@@ -158,7 +150,6 @@ export const categories = [
             { name: "episode_start_date", type: "date" },
             { name: "episode_start_datetime", type: "datetime" },
             { name: "episode_type_concept_id", type: "select" },
-            { name: "person_id", type: "lookup" }
         ]
     },
     {
@@ -176,7 +167,6 @@ export const categories = [
             { name: "measurement_time", type: "lookup" },
             { name: "measurement_type_concept_id", type: "select" },
             { name: "operator_concept_id", type: "select" },
-            { name: "person_id", type: "lookup" },
             { name: "provider_id", type: "lookup" },
             { name: "range_high", type: "range" },
             { name: "range_low", type: "range" },
@@ -211,7 +201,6 @@ export const categories = [
             { name: "note_text", type: "lookup" },
             { name: "note_title", type: "lookup" },
             { name: "note_type_concept_id", type: "select" },
-            { name: "person_id", type: "lookup" },
             { name: "provider_id", type: "lookup" },
             { name: "provider_id2", type: "lookup" },
             { name: "visit_detail_id", type: "lookup" },
@@ -239,7 +228,6 @@ export const categories = [
             { name: "note_title", type: "lookup" },
             { name: "note_type_concept_id", type: "lookup" },
             { name: "ord_id", type: "lookup" },
-            { name: "person_id", type: "lookup" },
             { name: "provider_id", type: "lookup" },
             { name: "provider_id2", type: "lookup" },
             { name: "reg_dt", type: "date" },
@@ -261,7 +249,6 @@ export const categories = [
             { name: "observation_source_concept_id", type: "select" },
             { name: "observation_source_value", type: "lookup" },
             { name: "observation_type_concept_id", type: "select" },
-            { name: "person_id", type: "lookup" },
             { name: "provider_id", type: "lookup" },
             { name: "qualifier_concept_id", type: "select" },
             { name: "qualifier_source_value", type: "lookup" },
@@ -282,7 +269,6 @@ export const categories = [
             { name: "observation_period_id", type: "lookup" },
             { name: "observation_period_start_date", type: "date" },
             { name: "period_type_concept_id", type: "select" },
-            { name: "person_id", type: "lookup" }
         ]
     },
     {
@@ -295,7 +281,6 @@ export const categories = [
             { name: "payer_plan_period_start_date", type: "date" },
             { name: "payer_source_concept_id", type: "select" },
             { name: "payer_source_value", type: "lookup" },
-            { name: "person_id", type: "lookup" },
             { name: "plan_concept_id", type: "select" },
             { name: "plan_source_concept_id", type: "select" },
             { name: "plan_source_value", type: "lookup" },
@@ -321,7 +306,6 @@ export const categories = [
             { name: "gender_source_value", type: "lookup" },
             { name: "location_id", type: "lookup" },
             { name: "month_of_birth", type: "select" },
-            { name: "person_id", type: "upload" },
             { name: "person_source_value", type: "lookup" },
             { name: "provider_id", type: "lookup" },
             { name: "race_concept_id", type: "select" },
@@ -335,7 +319,6 @@ export const categories = [
         columns: [
             { name: "modifier_concept_id", type: "select" },
             { name: "modifier_source_value", type: "lookup" },
-            { name: "person_id", type: "lookup" },
             { name: "procedure_concept_id", type: "select" },
             { name: "procedure_date", type: "date" },
             { name: "procedure_datetime", type: "datetime" },
@@ -370,7 +353,6 @@ export const categories = [
             { name: "disease_status_concept_id", type: "select" },
             { name: "disease_status_source_value", type: "lookup" },
             { name: "measurement_acpt_no", type: "lookup" },
-            { name: "person_id", type: "lookup" },
             { name: "quantity", type: "range" },
             { name: "specimen_concept_id", type: "select" },
             { name: "specimen_date", type: "date" },
@@ -392,7 +374,6 @@ export const categories = [
             { name: "discharged_to_concept_id", type: "select" },
             { name: "discharged_to_source_value", type: "lookup" },
             { name: "parent_visit_detail_id", type: "lookup" },
-            { name: "person_id", type: "lookup" },
             { name: "preceding_visit_detail_id", type: "lookup" },
             { name: "provider_id", type: "lookup" },
             { name: "visit_detail_concept_id", type: "select" },
@@ -415,7 +396,6 @@ export const categories = [
             { name: "care_site_id", type: "lookup" },
             { name: "discharged_to_concept_id", type: "select" },
             { name: "discharged_to_source_value", type: "lookup" },
-            { name: "person_id", type: "lookup" },
             { name: "preceding_visit_occurrence_id", type: "lookup" },
             { name: "provider_id", type: "lookup" },
             { name: "visit_concept_id", type: "select" },
