@@ -8,11 +8,15 @@
     let selectedField = null;
     let selectedContainer = null;
     let selectedRow = null;
+    // 그룹 이름 편집 상태 추가
+    let editingRowId = null;
+    let editingRowName = '';
 
     let rows = [
         {
             id: 1,
             type: 'initial', // initial, AND, NOT
+            name: '그룹 1', // 그룹 이름 필드 추가
             containers: [
                 {
                     id: 1,
@@ -84,6 +88,7 @@
         const newRow = {
             id: nextRowId++,
             type: 'AND', // initial, AND, NOT
+            name: `그룹 ${nextRowId - 1}`, // 새로운 행에 이름 할당
             containers: [
                 {
                     id: nextContainerId++,
@@ -97,6 +102,46 @@
             isLoading: false
         };
         rows = [...rows, newRow];
+    }
+
+    // 그룹 이름 편집 관련 함수들 추가
+    function startEditingGroupName(rowId, currentName) {
+        editingRowId = rowId;
+        editingRowName = currentName;
+        // 다음 tick에서 focus 설정
+        tick().then(() => {
+            const input = document.querySelector(`input[data-editing-row="${rowId}"]`);
+            if (input) {
+                input.focus();
+                input.select();
+            }
+        });
+    }
+
+    function saveGroupName() {
+        if (editingRowId && editingRowName.trim()) {
+            rows = rows.map(row => {
+                if (row.id === editingRowId) {
+                    return { ...row, name: editingRowName.trim() };
+                }
+                return row;
+            });
+        }
+        editingRowId = null;
+        editingRowName = '';
+    }
+
+    function cancelEditingGroupName() {
+        editingRowId = null;
+        editingRowName = '';
+    }
+
+    function handleGroupNameKeydown(event) {
+        if (event.key === 'Enter') {
+            saveGroupName();
+        } else if (event.key === 'Escape') {
+            cancelEditingGroupName();
+        }
     }
 
     function ensureEmptyContainer(rowId) {
@@ -486,10 +531,31 @@
                                 {/if}
                                 <div class="flex items-center gap-2">
                                     <div>
-                                        <h3 class="font-medium text-base">
-                                            그룹 {rowIndex + 1} {row.type === 'NOT' ? '(제외)' : ''}
+                                        <h3 class="font-medium text-base flex items-center gap-2">
+                                            {#if editingRowId === row.id}
+                                                <input
+                                                    type="text"
+                                                    class="bg-white bg-opacity-90 text-gray-800 px-2 py-0.5 border border-white border-opacity-50 rounded text-sm focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 focus:border-transparent w-56"
+                                                    data-editing-row={row.id}
+                                                    bind:value={editingRowName}
+                                                    on:keydown={handleGroupNameKeydown}
+                                                    on:blur={saveGroupName}
+                                                />
+                                            {:else}
+                                                <span>{row.name}</span>
+                                                <button 
+                                                    class="p-1 hover:bg-white hover:bg-opacity-20 rounded transition-colors duration-200"
+                                                    on:click={() => startEditingGroupName(row.id, row.name)}
+                                                    title="그룹명 편집"
+                                                >
+                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                                    </svg>
+                                                </button>
+                                            {/if}
+                                            {row.type === 'NOT' ? '(제외)' : ''}
                                         </h3>
-                                        <p class="text-xs text-white text-opacity-80">
+                                        <p class="text-xs text-white text-opacity-80 pt-0.5">
                                             {row.type === 'NOT' ? '해당 조건을 만족하지 않는 환자' : '해당 조건을 만족하는 환자'}
                                         </p>
                                     </div>
