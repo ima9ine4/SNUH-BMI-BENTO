@@ -1,5 +1,6 @@
 <script>
     import CategoryTree from './components/CategoryTree.svelte';
+    import FieldModal from './components/FieldModal.svelte';
     import { tick } from 'svelte';
 
     let cohortName = '';
@@ -7,9 +8,6 @@
     let selectedField = null;
     let selectedContainer = null;
     let selectedRow = null;
-    let selectedGender = '';
-    let startDate = '';
-    let endDate = '';
 
     let rows = [
         {
@@ -159,17 +157,19 @@
         const dragDataString = event.dataTransfer.getData('text/plain');
         if (!dragDataString) return;
         
-        let tableName, fieldName;
+        let tableName, fieldName, fieldType;
     
         try {
             // JSON 형태로 파싱 시도
             const dragData = JSON.parse(dragDataString);
             tableName = dragData.tableName;
             fieldName = dragData.fieldName;
+            fieldType = dragData.fieldType || 'unknown'; // 타입 정보 추가
         } catch (e) {
             // JSON 파싱 실패 시 기존 방식으로 처리
             tableName = "알 수 없음";
             fieldName = dragDataString;
+            fieldType = 'unknown';
         }
     
         // 드롭된 컨테이너가 빈 컨테이너인지 확인
@@ -186,6 +186,7 @@
                             const newItem = {
                                 tableName,
                                 fieldName,
+                                fieldType, // 타입 정보 추가
                                 conditions: null,
                                 displayText: fieldName
                             };
@@ -390,61 +391,11 @@
         showModal = true;
     }
 
-    function applyFieldConditions() {
-        if (selectedRow && selectedContainer !== null && selectedField !== null) {
-            const currentItem = rows.find(r => r.id === selectedRow)?.containers.find(c => c.id === selectedContainer)?.items[selectedField];
-            
-            let conditions = '';
-            
-            if (currentItem?.fieldName === '성별' && selectedGender) {
-                conditions = selectedGender;
-            } else if (currentItem?.fieldName === '진단일자' && (startDate || endDate)) {
-                if (startDate && endDate) {
-                    conditions = `${startDate} - ${endDate}`;
-                } else if (startDate) {
-                    conditions = `${startDate} 이후`;
-                } else if (endDate) {
-                    conditions = `${endDate} 이전`;
-                }
-            }
-            
-            rows = rows.map(row => {
-                if (row.id === selectedRow) {
-                    return {
-                        ...row,
-                        containers: row.containers.map(container => {
-                            if (container.id === selectedContainer) {
-                                return {
-                                    ...container,
-                                    items: container.items.map((item, index) => {
-                                        if (index === selectedField) {
-                                            return {
-                                                ...item,
-                                                conditions
-                                            };
-                                        }
-                                        return item;
-                                    })
-                                };
-                            }
-                            return container;
-                        })
-                    };
-                }
-                return row;
-            });
-        }
-        closeModal();
-    }
-
     function closeModal() {
         showModal = false;
         selectedField = null;
         selectedContainer = null;
         selectedRow = null;
-        selectedGender = '';
-        startDate = '';
-        endDate = '';
     }
 
     function executeAllCohorts() {
@@ -741,86 +692,44 @@
 </div> 
 
 <!-- 필드 상세 설정 모달 -->
-<!-- {#if showModal}
-    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white rounded-lg shadow-xl p-5 w-[480px] max-w-md">
-            <div class="flex justify-between items-center mb-5">
-                <h3 class="text-lg font-semibold text-slate-800">필드 상세 설정</h3>
-                <button class="text-slate-400 hover:text-slate-600 transition-colors" on:click={closeModal}>
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
-                </button>
-            </div>
-            
-            {#if selectedField !== null && selectedRow && selectedContainer !== null}
-                {@const currentItem = rows.find(r => r.id === selectedRow)?.containers.find(c => c.id === selectedContainer)?.items[selectedField]}
-                
-                <div class="mb-5">
-                    <div class="bg-slate-50 rounded-lg p-3 mb-3">
-                        <div class="text-xs text-slate-600 mb-1">테이블</div>
-                        <div class="font-medium text-slate-800 text-sm">{currentItem?.tableName}</div>
-                    </div>
-                    <div class="bg-slate-50 rounded-lg p-3 mb-5">
-                        <div class="text-xs text-slate-600 mb-1">필드</div>
-                        <div class="font-medium text-slate-800 text-sm">{currentItem?.fieldName}</div>
-                    </div>
-                    
-                    {#if currentItem?.fieldName === 'gender_concept_id'}
-                        <div class="space-y-3">
-                            <div class="text-sm font-medium text-slate-700">성별 선택:</div>
-                            <div class="space-y-2">
-                                <label class="flex items-center p-2.5 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer">
-                                    <input type="radio" bind:group={selectedGender} value="남성" class="mr-2.5">
-                                    <span class="text-slate-800 text-sm">남성</span>
-                                </label>
-                                <label class="flex items-center p-2.5 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer">
-                                    <input type="radio" bind:group={selectedGender} value="여성" class="mr-2.5">
-                                    <span class="text-slate-800 text-sm">여성</span>
-                                </label>
-                            </div>
-                        </div>
-                    {:else if currentItem?.fieldName === 'measurement_date'}
-                        <div class="space-y-3">
-                            <div class="text-sm font-medium text-slate-700">날짜 범위:</div>
-                            <div class="space-y-2">
-                                <div>
-                                    <label class="block text-xs text-slate-600 mb-1">시작일:</label>
-                                    <input type="date" bind:value={startDate} class="w-full p-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 text-sm">
-                                </div>
-                                <div>
-                                    <label class="block text-xs text-slate-600 mb-1">종료일:</label>
-                                    <input type="date" bind:value={endDate} class="w-full p-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 text-sm">
-                                </div>
-                            </div>
-                        </div>
-                    {:else}
-                        <div class="text-center py-6">
-                            <div class="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                                <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"/>
-                                </svg>
-                            </div>
-                            <p class="text-slate-500 text-sm">이 필드에 대한 상세 설정이 준비 중입니다.</p>
-                        </div>
-                    {/if}
-                </div>
-
-                <div class="flex gap-2">
-                    <button
-                        class="flex-1 bg-gradient-to-r from-slate-700 to-slate-800 text-white py-2.5 px-4 rounded-lg hover:from-slate-800 hover:to-slate-900 transition-all duration-200 font-medium text-sm"
-                        on:click={applyFieldConditions}
-                    >
-                        적용
-                    </button>
-                    <button
-                        class="flex-1 bg-slate-100 text-slate-700 py-2.5 px-4 rounded-lg hover:bg-slate-200 transition-colors font-medium text-sm"
-                        on:click={closeModal}
-                    >
-                        취소
-                    </button>
-                </div>
-            {/if}
-        </div>
-    </div> 
-{/if}  -->
+{#if showModal && selectedField !== null && selectedRow && selectedContainer !== null}
+    {@const currentItem = rows.find(r => r.id === selectedRow)?.containers.find(c => c.id === selectedContainer)?.items[selectedField]}
+    
+    <FieldModal 
+        showModal={showModal}
+        fieldData={currentItem ? {
+            fieldName: currentItem.fieldName,
+            tableName: currentItem.tableName,
+            fieldType: currentItem.fieldType
+        } : null}
+        onClose={closeModal}
+        onApply={(conditions) => {
+            rows = rows.map(row => {
+                if (row.id === selectedRow) {
+                    return {
+                        ...row,
+                        containers: row.containers.map(container => {
+                            if (container.id === selectedContainer) {
+                                return {
+                                    ...container,
+                                    items: container.items.map((item, index) => {
+                                        if (index === selectedField) {
+                                            return {
+                                                ...item,
+                                                conditions: conditions.displayText
+                                            };
+                                        }
+                                        return item;
+                                    })
+                                };
+                            }
+                            return container;
+                        })
+                    };
+                }
+                return row;
+            });
+            closeModal();
+        }}
+    />
+{/if} 
