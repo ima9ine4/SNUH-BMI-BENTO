@@ -24,21 +24,49 @@
                 }
             ],
             patientCount: 0,
-            rowOperator: 'AND' // 이 행 앞에 붙을 연산자
+            rowOperator: 'AND', // 이 행 앞에 붙을 연산자
+            isLoading: false
         }
     ];
     let nextRowId = 2;
     let nextContainerId = 2;
     let scrollRefs = {};
 
-    // 행 색상 배열
-    const rowColors = [
-        { bg: 'bg-blue-50', border: 'border-blue-200', rightBg: 'bg-blue-100', rightBorder: 'border-blue-300', textColor: 'text-blue-600' },
-        { bg: 'bg-green-50', border: 'border-green-200', rightBg: 'bg-green-100', rightBorder: 'border-green-300', textColor: 'text-green-600' },
-        { bg: 'bg-yellow-50', border: 'border-yellow-200', rightBg: 'bg-yellow-100', rightBorder: 'border-yellow-300', textColor: 'text-yellow-600' },
-        { bg: 'bg-purple-50', border: 'border-purple-200', rightBg: 'bg-purple-100', rightBorder: 'border-purple-300', textColor: 'text-purple-600' },
-        { bg: 'bg-pink-50', border: 'border-pink-200', rightBg: 'bg-pink-100', rightBorder: 'border-pink-300', textColor: 'text-pink-600' }
+    // 깔끔한 카드 스타일 배열
+    const rowStyles = [
+        {
+            gradient: 'from-blue-800 to-blue-950',
+            bg: 'bg-blue-50',
+            border: 'border-blue-200',
+            text: 'text-blue-700',
+            accent: 'bg-blue-100',
+            light: 'bg-blue-100'
+        },
+        {
+            gradient: 'from-blue-600 to-blue-700',
+            bg: 'bg-blue-50',
+            border: 'border-blue-200',
+            text: 'text-blue-700',
+            accent: 'bg-blue-100',
+            light: 'bg-blue-100'
+        },
+        {
+            gradient: 'from-blue-400 to-blue-500',
+            bg: 'bg-blue-50',
+            border: 'border-blue-200',
+            text: 'text-blue-700',
+            accent: 'bg-blue-100',
+            light: 'bg-blue-100'
+        }
     ];
+
+    function getRowStyle(index) {
+        if (index < 3) {
+            return rowStyles[index];
+        } else {
+            return rowStyles[2];
+        }
+    }
 
     function toggleRowType(rowId) {
         rows = rows.map(row => {
@@ -67,7 +95,8 @@
                 }
             ],
             patientCount: 0,
-            rowOperator: 'AND'
+            rowOperator: 'AND',
+            isLoading: false
         };
         rows = [...rows, newRow];
     }
@@ -119,6 +148,9 @@
     function removeRow(rowId) {
         if (rows.length > 1) {
             rows = rows.filter(row => row.id !== rowId);
+            if(rows.length === 1) {
+                rows[0].type = 'initial';
+            }
         }
     }
 
@@ -265,10 +297,6 @@
                     <path d="M 11 4 A 6 6 0 0 1 11 12 A 6 6 0 0 1 11 4" fill="currentColor"/>
                 </svg>`;
         }
-    }
-
-    function getRowColor(index) {
-        return rowColors[index % rowColors.length];
     }
 
     function getGlobalContainerIndex(targetRowIndex, targetContainerIndex) {
@@ -418,250 +446,294 @@
         startDate = '';
         endDate = '';
     }
+
+    function executeAllCohorts() {
+        // 전체 코호트 실행 로직
+        console.log('코호트 생성');
+    }
+
+    function executeRowQuery(rowId) {
+        // 로딩 상태 시작
+        rows = rows.map(r => r.id === rowId ? { ...r, isLoading: true } : r);
+        
+        const row = rows.find(r => r.id === rowId);
+        if (row) {
+            console.log(`그룹 ${rowId} 환자수 조회`, row);
+            
+            // API 호출 시뮬레이션 (1-2초 지연)
+            setTimeout(() => {
+                const randomCount = Math.floor(Math.random() * 10000) + 1000;
+                rows = rows.map(r => r.id === rowId ? { 
+                    ...r, 
+                    patientCount: randomCount,
+                    isLoading: false 
+                } : r);
+            }, Math.random() * 1000 + 1000); // 1-2초 랜덤 지연
+        }
+    }
 </script>
 
-<div class="flex overflow-hidden">
+<div class="flex bg-slate-100 h-screen">
     <!-- 좌측 사이드 바 -->
-    <aside class="fixed h-full left-0 w-72 bg-white border-r border-gray-200 overflow-y-auto">
+    <aside class="fixed h-full left-0 w-72 bg-white border-r border-slate-200 overflow-y-auto">
         <CategoryTree />
     </aside>
 
-    <div class="fixed left-72 w-[calc(100%-288px)] flex items-center px-6 py-2 bg-white border-b border-gray-200 z-20">
-        <!-- 상단 버튼 (New Query, Save) -->
-        <div class="flex items-center gap-2">
-            <button class="px-4 py-1 rounded-2xl bg-white border border-gray-300 text-gray-700 font-semibold text-sm hover:bg-gray-100 flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                </svg>
-                New Query
-            </button>
-            <button class="px-4 py-1 rounded-2xl bg-white border border-gray-300 text-gray-700 font-semibold text-sm hover:bg-gray-100 flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
-                </svg>
-                Save
-            </button>
-        </div>
-        <!-- 중앙 코호트 이름 입력창 -->
-        <input
-            type="text"
-            class="ml-6 flex-1 max-w-xs px-3 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="코호트 이름을 입력하세요"
-            bind:value={cohortName}
-        />
-        <!-- 우측 컨테이너 간 연산 식 -->
-        <div class="ml-auto flex items-center gap-2">
-            <span class="text-xs text-gray-400">{generateFormula()}</span>
-        </div>
-    </div>
-   
-    <div class="ml-72 pt-12 flex h-[calc(100vh-60px)] w-full overflow-hidden">
-        <!-- 메인 컨텐츠 영역 -->
-        <div class="flex-1 overflow-y-auto border-b border-gray-200 w-full">
-            <!-- 동적 행들 -->
+    <!-- 메인 컨텐츠 -->
+    <div class="ml-72 flex-1 flex flex-col overflow-x-auto">
+        <!-- 상단 헤더 -->
+        <header class="flex fixed top-[60px] left-72 right-0 bg-white border-b border-slate-200 px-8 py-3 shadow-sm">
+            <div class="flex items-center justify-between gap-4 w-full">
+                <h1 class="text-lg font-semibold text-slate-800">코호트 정의하기</h1>
+                <input
+                    type="text"
+                    class="flex-1 w-full px-2 py-1.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-slate-500 focus:border-transparent"
+                    placeholder="코호트 이름을 입력하세요"
+                    bind:value={cohortName}
+                />
+                <div class="text-xs text-slate-500 font-mono bg-slate-100 px-2.5 py-1.5 rounded-lg">
+                    {generateFormula()}
+                </div>
+            </div>
+        </header>
+
+        <!-- 메인 콘텐츠 영역 -->
+        <main class="flex-1 overflow-y-auto px-5 space-y-4 pb-24 pt-16">
+            <!-- 쿼리 단계 카드들 -->
             {#each rows as row, rowIndex}
-                <div class="relative min-h-[120px] {getRowColor(rowIndex).bg} {getRowColor(rowIndex).border} border w-full pr-44">
-                    <!-- 좌측 컨테이너 스크롤 영역 -->
-                    <div class="flex-1 overflow-x-auto h-full" bind:this={scrollRefs[row.id]}>
-                        <div class="flex items-start gap-4 min-h-[120px] min-w-max p-4">
-                            <!-- 행 타입 표시 -->
-                            <div class="flex flex-col gap-2 min-w-[80px] flex-shrink-0">
-                                {#if row.type === 'initial'}
-                                    <span class="inline-block bg-red-500 text-white text-xs px-2 py-1 rounded w-fit">Initial Event</span>
-                                    <span class="inline-block bg-blue-600 text-white text-xs px-2 py-1 rounded w-fit">Index Date</span>
-                                {:else}
+                {@const style = getRowStyle(rowIndex)}
+                <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow duration-300">
+                    <!-- 카드 헤더 -->
+                    <div class="bg-gradient-to-r {style.gradient} px-5 py-3 text-white">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                {#if row.type !== 'initial'}
                                     <button 
-                                        class="inline-block {row.type === 'NOT' ? 'bg-gray-600' : 'bg-gray-300'} {row.type === 'NOT' ? 'text-white' : 'text-gray-700'} text-xs px-2 py-1 rounded w-fit hover:opacity-80 transition-opacity"
+                                        class="px-2.5 py-1 bg-white bg-opacity-20 rounded-full text-xs font-medium hover:bg-opacity-30 transition-colors"
                                         on:click={() => toggleRowType(row.id)}
-                                        title="{row.type === 'NOT' ? 'NOT 해제' : 'NOT 적용'}"
                                     >
                                         {row.type === 'NOT' ? 'NOT' : 'AND'}
                                     </button>
+                                {:else}
+                                    <div class="px-2.5 py-1 bg-white bg-opacity-20 rounded-full text-xs font-medium transition-colors">
+                                        <span class="text-xs font-semibold">Initial</span>
+                                    </div>
+                                {/if}
+                                <div class="flex items-center gap-2">
+                                    <div>
+                                        <h3 class="font-medium text-base">
+                                            그룹 {rowIndex + 1} {row.type === 'NOT' ? '(제외)' : ''}
+                                        </h3>
+                                        <p class="text-xs text-white text-opacity-80">
+                                            {row.type === 'NOT' ? '해당 조건을 만족하지 않는 환자' : '해당 조건을 만족하는 환자'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center gap-3">
+                                <button class="bg-white bg-opacity-20 rounded-lg text-xs font-medium hover:bg-opacity-30 transition-colors flex items-center gap-1.5"
+                                    on:click={() => executeRowQuery(row.id)}>
+                                    <!-- 환자수 표시 -->
+                                    {#if row.isLoading}
+                                        <div class="flex items-center gap-2 rounded-lg px-3 py-1.5">
+                                            <svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            <span class="text-xs font-semibold">조회 중...</span>
+                                        </div>
+                                    {:else if row.patientCount > 0}
+                                        <div class="flex items-center gap-2 bg-green-500 bg-opacity-30 rounded-lg px-3 py-1.5 border border-green-300 border-opacity-30">
+                                            <svg class="w-3.5 h-3.5 text-green-200" fill="currentColor" viewBox="0 0 24 24">
+                                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                                            </svg>
+                                            <span class="text-xs font-bold text-green-100">{row.patientCount.toLocaleString()}명</span>
+                                        </div>
+                                    {:else}
+                                        <div class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-white">
+                                            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                                                <path d="M5 4v16l14-8z"/>
+                                            </svg>
+                                            <span class="text-xs">환자 수 조회</span>
+                                        </div>
+                                    {/if}
+                                </button>
+                                {#if rows.length > 1}
+                                    <button 
+                                        class="p-1.5 bg-white bg-opacity-20 rounded-lg hover:bg-opacity-30 transition-colors"
+                                        on:click={() => removeRow(row.id)}
+                                    >
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                        </svg>
+                                    </button>
                                 {/if}
                             </div>
-                        
-                            <!-- 컨테이너들 -->
-                            {#each row.containers as container, containerIndex}
-                                <!-- 컨테이너 -->
-                                {#if container.isEmpty}
-                                    <div 
-                                        class="border-2 border-dashed border-gray-300 rounded-lg p-6 min-w-[450px] w-[450px] min-h-[120px] flex items-center justify-center text-gray-500 text-sm bg-white hover:border-gray-400 transition-colors flex-shrink-0"
-                                        on:drop={(e) => handleDrop(e, row.id, container.id)}
-                                        on:dragover={allowDrop}
-                                        role="button"
-                                        tabindex="0"
-                                    >
-                                        <div class="text-center">
-                                            <svg class="w-6 h-6 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                                            </svg>
-                                            <div>조건을 설정할</div>
-                                            <div>조회 항목을 끌어다 놓으세요</div>
-                                        </div>
-                                    </div>
-                                {:else}
-                                    <div class="bg-white rounded-lg border border-gray-200 p-4 min-w-[450px] w-[450px] shadow-sm flex-shrink-0">
-                                        <div class="flex items-center justify-between mb-3">
-                                            <div class="flex items-center gap-2">
-                                                <span class="{getRowColor(rowIndex).textColor} font-bold text-sm">{getContainerNumber(getGlobalContainerIndex(rowIndex, containerIndex))}</span>
-                                                <span class="text-gray-700 text-sm">컨테이너 {containerIndex + 1}</span>
-                                            </div>
-                                            <div class="flex items-center gap-1">
-                                                <button 
-                                                    aria-label="Remove container"
-                                                    class="w-4 h-4 text-gray-400 hover:text-red-600" 
-                                                    on:click={() => removeContainer(row.id, container.id)}
-                                                >
-                                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                                                    </svg>
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        <!-- 구분선 -->
-                                        <div class="border-b border-gray-200"></div>
-                                        
-                                        <!-- 필드 영역 -->
+                        </div>
+                    </div>
+                    
+                    <!-- 카드 본문 -->
+                    <div class="p-4">
+                        <div class="max-w-full overflow-x-auto">
+                            <div class="flex items-center gap-0 w-max">
+                                {#each row.containers as container, containerIndex}
+                                    <!-- 컨테이너 -->
+                                    {#if container.isEmpty}
                                         <div 
-                                            class="min-h-[60px] py-2"
+                                            class="border-2 border-dashed border-slate-300 rounded-lg p-6 min-w-[380px] flex items-center justify-center text-slate-500 bg-slate-50 hover:border-slate-400 hover:bg-slate-100 transition-all duration-200"
                                             on:drop={(e) => handleDrop(e, row.id, container.id)}
                                             on:dragover={allowDrop}
                                             role="button"
                                             tabindex="0"
                                         >
-                                            {#if container.items.length === 0}
-                                                <div class="text-center text-gray-400 text-sm py-4">
-                                                    필드를 여기에 드래그하세요
+                                            <div class="text-center">
+                                                <div class="w-10 h-10 bg-slate-300 rounded-full flex items-center justify-center mx-auto mb-2">
+                                                    <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                                    </svg>
                                                 </div>
-                                            {:else}
-                                                <div class="space-y-2">
-                                                    {#each container.items as item, itemIndex}
-                                                        <div class="bg-gray-50 rounded p-2 border border-gray-200">
-                                                            <div class="flex items-center justify-between">
-                                                                <button 
-                                                                    class="flex-1 text-left"
-                                                                    on:click={() => openFieldModal(row.id, container.id, itemIndex)}
-                                                                >
-                                                                    <div class="flex items-center gap-2">
-                                                                        <span class="text-xs text-gray-500 w-12 truncate">{item.tableName}</span>
-                                                                        <span class="text-sm font-medium text-gray-700">{item.fieldName}</span>
-                                                                        {#if item.conditions}
-                                                                            <span class="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                                                                                {item.conditions}
-                                                                            </span>
-                                                                        {/if}
-                                                                    </div>
-                                                                </button>
-                                                                <div class="flex items-center gap-2 ml-3">
+                                                <h4 class="font-medium text-slate-700 mb-1 text-sm">테이블 별 컨테이너 추가</h4>
+                                                <p class="text-xs text-slate-500">좌측에서 항목을 끌어다 놓으세요</p>
+                                            </div>
+                                        </div>
+                                    {:else}
+                                        <div class="bg-white rounded-lg border {style.border} p-3 min-w-[380px] shadow-sm overflow-x-auto">
+                                            <div class="flex items-center justify-between mb-2">
+                                                <div class="flex items-center gap-2">
+                                                    <div class="w-5 h-5 bg-gradient-to-r {style.gradient} rounded-full flex items-center justify-center">
+                                                        <span class="text-xs font-semibold text-white">{getContainerNumber(getGlobalContainerIndex(rowIndex, containerIndex))}</span>
+                                                    </div>
+                                                    <span class="text-xs font-medium text-slate-700">컨테이너 {containerIndex + 1}</span>
+                                                </div>
+                                                <button 
+                                                    class="text-slate-400 hover:text-red-500 transition-colors"
+                                                    on:click={() => removeContainer(row.id, container.id)}
+                                                >
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                                    </svg>
+                                                </button>
+                                            </div>
+
+                                            <div class="border-t border-slate-200 pt-2">
+                                                <div 
+                                                    class="min-h-[60px] space-y-1.5"
+                                                    on:drop={(e) => handleDrop(e, row.id, container.id)}
+                                                    on:dragover={allowDrop}
+                                                    role="button"
+                                                    tabindex="0"
+                                                >
+                                                    {#if container.items.length === 0}
+                                                        <div class="text-center text-slate-400 py-4">
+                                                            <p class="text-xs">조건을 추가하세요</p>
+                                                        </div>
+                                                    {:else}
+                                                        {#each container.items as item, itemIndex}
+                                                            <div class="bg-slate-50 rounded-md p-2.5 border border-slate-200 hover:border-slate-300 transition-colors">
+                                                                <div class="flex items-center justify-between">
                                                                     <button 
-                                                                        aria-label="Remove item"
-                                                                        class="text-gray-400 hover:text-red-600"
+                                                                        class="flex-1 text-left"
+                                                                        on:click={() => openFieldModal(row.id, container.id, itemIndex)}
+                                                                    >
+                                                                        <div class="flex items-center gap-2">
+                                                                            <span class="text-xs {style.text} bg-white px-1.5 py-0.5 rounded font-medium">{item.tableName}</span>
+                                                                            <span class="text-xs font-medium text-slate-800">{item.fieldName}</span>
+                                                                        </div>
+                                                                        {#if item.conditions}
+                                                                            <div class="mt-1">
+                                                                                <span class="text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
+                                                                                    {item.conditions}
+                                                                                </span>
+                                                                            </div>
+                                                                        {/if}
+                                                                    </button>
+                                                                    <button 
+                                                                        class="text-slate-400 hover:text-red-500 transition-colors ml-2"
                                                                         on:click={() => removeItemFromContainer(row.id, container.id, itemIndex)}
                                                                     >
-                                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                                                                         </svg>
                                                                     </button>
                                                                 </div>
                                                             </div>
-                                                        </div>
-                                                    {/each}
+                                                        {/each}
+                                                    {/if}
                                                 </div>
-                                            {/if}
+                                            </div>
                                         </div>
-                                    </div>
-                                {/if}
+                                    {/if}
 
-                                <!-- 로직 연결 (마지막 컨테이너가 아닌 경우) -->
-                                {#if containerIndex < row.containers.length - 1}
-                                    <div class="flex items-center justify-center min-w-[60px] w-[60px] flex-shrink-0 relative">
-                                        <!-- 로직 버튼 -->
-                                        <div class="relative z-10">
+                                    <!-- 로직 연결 -->
+                                    {#if containerIndex < row.containers.length - 1}
+                                        <div class="flex flex-row items-center justify-center">
+                                            <div class="h-px w-2 bg-slate-300"></div>
                                             <button 
-                                                class="bg-gray-500 text-white text-sm px-3 py-1.5 rounded-full hover:opacity-80 transition-opacity flex items-center gap-1 shadow-sm relative"
+                                                class="bg-white border-2 border-slate-300 text-slate-700 px-2.5 py-2 rounded-full hover:border-slate-400 hover:bg-slate-50 transition-all duration-200 flex flex-col items-center shadow-sm"
                                                 on:click={() => toggleLogic(row.id, container.id)}
-                                                title="클릭하여 {container.logic === 'AND' ? 'OR' : container.logic === 'OR' ? 'NOT' : 'AND'}로 변경"
                                             >
                                                 <span class="flex items-center">{@html getLogicSymbol(container.logic)}</span>
                                                 <span class="text-xs font-medium">{container.logic}</span>
                                             </button>
-                                            
-                                            <!-- 왼쪽으로 향하는 연결선 -->
-                                            <div class="absolute right-full top-1/2 w-3 h-1 bg-gray-300 transform -translate-y-1/2"></div>
-                                            
-                                            <!-- 오른쪽으로 향하는 연결선 -->
-                                            <div class="absolute left-full top-1/2 w-3 h-1 bg-gray-300 transform -translate-y-1/2"></div>
+                                            <div class="h-px w-2 bg-slate-300"></div>
                                         </div>
-                                    </div>
-                                {/if}
-                            {/each}
-                            
-                            <!-- 빈 컨테이너는 항상 마지막에 하나씩 유지 -->
-                            <div class="w-[44px] flex-shrink-0"></div>
+                                    {/if}
+                                {/each}
+                            </div>
                         </div>
-                    </div>
-                    
-                    <!-- 우측 고정 영역 (대상 환자 + 실행 버튼) -->
-                    <div class="absolute top-0 right-0 w-44 h-full z-10 {getRowColor(rowIndex).rightBg} {getRowColor(rowIndex).rightBorder} border-l p-4 flex flex-col items-start justify-between">
-                        <!-- 상단 실행 버튼 -->
-                        <button class="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition-colors" aria-label="Run Query">
-                            <svg class="w-5 h-4" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M5 4v16l14-8z"/>
-                            </svg>
-                        </button>
-                        
-                        <!-- 중앙 대상 환자 정보 -->
-                        <div class="text-start flex-1 flex flex-col justify-center">
-                            <div class="text-xs text-gray-600">대상 환자</div>
-                            <div class="text-xl font-bold {getRowColor(rowIndex).textColor} mb-1">{row.patientCount.toLocaleString()}명</div>
-                        </div>
-                    
-                        <!-- 하단 코호트 확인 버튼 -->
-                        <button class="w-full bg-white border border-gray-300 text-gray-700 text-xs py-2 px-3 rounded hover:bg-gray-50 transition-colors">
-                            코호트 확인
-                        </button>
-                    
-                        <!-- 행 삭제 버튼 (필요한 경우) -->
-                        {#if rows.length > 1}
-                            <button 
-                                aria-label="Remove row"
-                                class="absolute top-2 right-2 text-gray-400 hover:text-red-600 transition-colors"
-                                on:click={() => removeRow(row.id)}
-                            >
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-                                </svg>
-                            </button>
-                        {/if}
                     </div>
                 </div>
             {/each}
             
-            <!-- 행 추가 버튼 -->
-            <div class="mx-4 my-4 flex justify-center">
+            <!-- 새 단계 추가 버튼 -->
+            <div class="flex justify-center">
                 <button 
-                    class="flex items-center gap-2 px-6 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 transition-colors bg-white text-gray-600 hover:text-gray-800"
+                    class="flex items-center gap-2.5 px-24 py-5 border-2 border-dashed border-slate-300 rounded-lg hover:border-slate-400 transition-all duration-200 bg-white hover:bg-slate-50"
                     on:click={addRow}
                 >
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                    </svg>
-                    새 행 추가
+                    <div class="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center">
+                        <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                        </svg>
+                    </div>
+                    <div class="text-left">
+                        <h4 class="font-medium text-slate-700 text-sm">새 그룹 추가</h4>
+                        <p class="text-xs text-slate-500">추가 조건을 설정하세요</p>
+                    </div>
                 </button>
             </div>
-        </div>
+        </main>
+
+        <!-- 하단 액션 바 -->
+        <footer class="fixed bottom-0 left-72 right-0 bg-white border-t border-slate-200 px-6 py-5">
+            <div class="flex items-center justify-between">
+                <div class="text-xs text-slate-500">
+                    총 {rows.length}개 그룹 · 
+                    최종 대상: <span class="font-medium text-slate-800">{rows.reduce((sum, row) => sum + row.patientCount, 0).toLocaleString()}명</span>
+                </div>
+                <button 
+                    class="px-4 py-2 bg-gradient-to-r from-slate-700 to-slate-800 text-white rounded-lg hover:from-slate-800 hover:to-slate-900 transition-all duration-200 font-medium flex items-center gap-2 text-sm"
+                    on:click={executeAllCohorts}
+                >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    코호트 생성
+                </button>
+            </div>
+        </footer>
     </div>
 </div> 
 
 <!-- 필드 상세 설정 모달 -->
-{#if showModal}
+<!-- {#if showModal}
     <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white rounded-lg p-6 w-[500px] max-w-md">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-semibold">필드 상세 설정</h3>
-                <button aria-label="Close" on:click={closeModal} class="text-gray-400 hover:text-gray-600">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="bg-white rounded-lg shadow-xl p-5 w-[480px] max-w-md">
+            <div class="flex justify-between items-center mb-5">
+                <h3 class="text-lg font-semibold text-slate-800">필드 상세 설정</h3>
+                <button class="text-slate-400 hover:text-slate-600 transition-colors" on:click={closeModal}>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
                 </button>
@@ -670,55 +742,65 @@
             {#if selectedField !== null && selectedRow && selectedContainer !== null}
                 {@const currentItem = rows.find(r => r.id === selectedRow)?.containers.find(c => c.id === selectedContainer)?.items[selectedField]}
                 
-                <div class="mb-6">
-                    <div class="text-sm text-gray-600 mb-1">테이블: {currentItem?.tableName}</div>
-                    <div class="text-base font-medium mb-4">필드: {currentItem?.fieldName}</div>
+                <div class="mb-5">
+                    <div class="bg-slate-50 rounded-lg p-3 mb-3">
+                        <div class="text-xs text-slate-600 mb-1">테이블</div>
+                        <div class="font-medium text-slate-800 text-sm">{currentItem?.tableName}</div>
+                    </div>
+                    <div class="bg-slate-50 rounded-lg p-3 mb-5">
+                        <div class="text-xs text-slate-600 mb-1">필드</div>
+                        <div class="font-medium text-slate-800 text-sm">{currentItem?.fieldName}</div>
+                    </div>
                     
-                    <!-- 성별 필드 -->
-                    {#if currentItem?.fieldName === '성별'}
+                    {#if currentItem?.fieldName === 'gender_concept_id'}
                         <div class="space-y-3">
-                            <div class="text-sm font-medium">성별 선택:</div>
+                            <div class="text-sm font-medium text-slate-700">성별 선택:</div>
                             <div class="space-y-2">
-                                <label class="flex items-center">
-                                    <input type="radio" bind:group={selectedGender} value="남성" class="mr-2">
-                                    남성
+                                <label class="flex items-center p-2.5 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer">
+                                    <input type="radio" bind:group={selectedGender} value="남성" class="mr-2.5">
+                                    <span class="text-slate-800 text-sm">남성</span>
                                 </label>
-                                <label class="flex items-center">
-                                    <input type="radio" bind:group={selectedGender} value="여성" class="mr-2">
-                                    여성
+                                <label class="flex items-center p-2.5 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer">
+                                    <input type="radio" bind:group={selectedGender} value="여성" class="mr-2.5">
+                                    <span class="text-slate-800 text-sm">여성</span>
                                 </label>
                             </div>
                         </div>
-                    {:else if currentItem?.fieldName === '진단일자'}
+                    {:else if currentItem?.fieldName === 'measurement_date'}
                         <div class="space-y-3">
-                            <div class="text-sm font-medium">날짜 범위:</div>
+                            <div class="text-sm font-medium text-slate-700">날짜 범위:</div>
                             <div class="space-y-2">
                                 <div>
-                                    <label ariaclass="block text-sm text-gray-600 mb-1">시작일:</label>
-                                    <input type="date" bind:value={startDate} class="w-full p-2 border rounded">
+                                    <label class="block text-xs text-slate-600 mb-1">시작일:</label>
+                                    <input type="date" bind:value={startDate} class="w-full p-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 text-sm">
                                 </div>
                                 <div>
-                                    <label class="block text-sm text-gray-600 mb-1">종료일:</label>
-                                    <input type="date" bind:value={endDate} class="w-full p-2 border rounded">
+                                    <label class="block text-xs text-slate-600 mb-1">종료일:</label>
+                                    <input type="date" bind:value={endDate} class="w-full p-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 text-sm">
                                 </div>
                             </div>
                         </div>
                     {:else}
-                        <div class="text-sm text-gray-500 py-4">
-                            이 필드에 대한 상세 설정이 준비 중입니다.
+                        <div class="text-center py-6">
+                            <div class="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"/>
+                                </svg>
+                            </div>
+                            <p class="text-slate-500 text-sm">이 필드에 대한 상세 설정이 준비 중입니다.</p>
                         </div>
                     {/if}
                 </div>
 
-                <div class="flex gap-3">
+                <div class="flex gap-2">
                     <button
-                        class="flex-1 bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700"
+                        class="flex-1 bg-gradient-to-r from-slate-700 to-slate-800 text-white py-2.5 px-4 rounded-lg hover:from-slate-800 hover:to-slate-900 transition-all duration-200 font-medium text-sm"
                         on:click={applyFieldConditions}
                     >
                         적용
                     </button>
                     <button
-                        class="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded hover:bg-gray-400"
+                        class="flex-1 bg-slate-100 text-slate-700 py-2.5 px-4 rounded-lg hover:bg-slate-200 transition-colors font-medium text-sm"
                         on:click={closeModal}
                     >
                         취소
@@ -727,4 +809,4 @@
             {/if}
         </div>
     </div> 
-{/if} 
+{/if}  -->
