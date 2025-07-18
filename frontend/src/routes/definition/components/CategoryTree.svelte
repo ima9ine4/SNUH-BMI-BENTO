@@ -58,8 +58,6 @@
     }
 
     function highlight(text, keyword) {
-        console.log('keyword', keyword);
-        console.log('text', text);
         if (!keyword) return text;
         const idx = text.toLowerCase().indexOf(keyword.toLowerCase());
         if (idx === -1) return text;
