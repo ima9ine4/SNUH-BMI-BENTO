@@ -23,12 +23,16 @@
     }
 
     function handleDragStart(event, item, tableName = null) {
-        // 테이블명과 필드명을 JSON으로 전달
+        // 테이블명, 필드명, 필드타입을 JSON으로 전달
         const dragData = {
             tableName: tableName || item.table || '알 수 없음',
-            fieldName: item.name || item.table
+            fieldName: item.name || item.table,
+            fieldType: item.type || 'unknown'
         };
         event.dataTransfer.setData('text/plain', JSON.stringify(dragData));
+        
+        // 전역 변수에 드래그 데이터 저장 (drag over 이벤트에서 사용)
+        window.currentDragData = dragData;
     }
 
     function filterTree(tree, keyword) {
