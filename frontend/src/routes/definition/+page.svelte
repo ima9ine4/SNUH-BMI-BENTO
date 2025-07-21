@@ -1,26 +1,32 @@
 <script>
     import CategoryTree from './components/CategoryTree.svelte';
     import FieldModal from './components/FieldModal.svelte';
-    import { tick } from 'svelte';
+    import { tick, onMount } from 'svelte';
 
     let cohortName = '';
     let showModal = false;
     let selectedField = null;
     let selectedContainer = null;
     let selectedRow = null;
-    // 그룹 이름 편집 상태 추가
+
+    // 그룹 이름 수정 상태
     let editingRowId = null;
     let editingRowName = '';
+    
+    // 드래그 상태 추적
+    let dragOverContainer = null; // { rowId, containerId, canDrop }
+    let currentDragData = null;
 
     let rows = [
         {
             id: 1,
             type: 'initial', // initial, AND, NOT
-            name: '그룹 1', // 그룹 이름 필드 추가
+            name: '그룹 1', // 그룹 이름 필드
             containers: [
                 {
                     id: 1,
                     isEmpty: true,
+                    tableName: null,
                     items: [], // { tableName, fieldName, conditions }
                     logic: 'AND'
                 }
@@ -34,7 +40,6 @@
     let nextContainerId = 2;
     let scrollRefs = {};
 
-    // 깔끔한 카드 스타일 배열
     const rowStyles = [
         {
             gradient: 'from-blue-800 to-blue-950',
@@ -93,6 +98,7 @@
                 {
                     id: nextContainerId++,
                     isEmpty: true,
+                    tableName: null,
                     items: [],
                     logic: 'AND'
                 }
@@ -104,7 +110,7 @@
         rows = [...rows, newRow];
     }
 
-    // 그룹 이름 편집 관련 함수들 추가
+    // 그룹 이름 수정 관련 함수들
     function startEditingGroupName(rowId, currentName) {
         editingRowId = rowId;
         editingRowName = currentName;
@@ -157,6 +163,7 @@
                         containers: [...row.containers, {
                             id: nextContainerId++,
                             isEmpty: true,
+                            tableName: null,
                             items: [],
                             logic: 'AND'
                         }]
@@ -176,6 +183,7 @@
                     newContainers.push({
                         id: nextContainerId++,
                         isEmpty: true,
+                        tableName: null,
                         items: [],
                         logic: 'AND'
                     });
@@ -197,6 +205,33 @@
         }
     }
 
+    function handleDragOver(event, rowId, containerId) {
+        event.preventDefault();
+
+        const dragData = window.currentDragData;
+        if (!dragData) return;
+
+        const targetRow = rows.find(r => r.id === rowId);
+        const targetContainer = targetRow?.containers.find(c => c.id === containerId);
+
+        let canDrop = true;
+        if (!targetContainer?.isEmpty && targetContainer?.tableName) {
+            canDrop = targetContainer.tableName === dragData.tableName;
+        }
+
+        if (
+            dragOverContainer && 
+            dragOverContainer.rowId === rowId && 
+            dragOverContainer.containerId === containerId &&
+            dragOverContainer.canDrop === canDrop
+        ) {
+            // 이미 같은 상태면 업데이트하지 않음 (깜빡거림 방지)
+            return;
+        }
+        dragOverContainer = { rowId, containerId, canDrop };
+    }
+
+
     function handleDrop(event, rowId, containerId) {
         event.preventDefault();
         const dragDataString = event.dataTransfer.getData('text/plain');
@@ -209,12 +244,14 @@
             const dragData = JSON.parse(dragDataString);
             tableName = dragData.tableName;
             fieldName = dragData.fieldName;
-            fieldType = dragData.fieldType || 'unknown'; // 타입 정보 추가
+            fieldType = dragData.fieldType || 'unknown';
+            currentDragData = dragData; // 현재 드래그 데이터 업데이트
         } catch (e) {
             // JSON 파싱 실패 시 기존 방식으로 처리
             tableName = "알 수 없음";
             fieldName = dragDataString;
             fieldType = 'unknown';
+            currentDragData = { tableName, fieldName, fieldType };
         }
     
         // 드롭된 컨테이너가 빈 컨테이너인지 확인
@@ -231,7 +268,7 @@
                             const newItem = {
                                 tableName,
                                 fieldName,
-                                fieldType, // 타입 정보 추가
+                                fieldType,
                                 conditions: null,
                                 displayText: fieldName
                             };
@@ -239,6 +276,7 @@
                             return {
                                 ...container,
                                 isEmpty: false,
+                                tableName: tableName,
                                 items: newItems
                             };
                         }
@@ -253,6 +291,10 @@
         if (wasEmpty) {
             ensureEmptyContainer(rowId);
         }
+        
+        // 드래그 상태 초기화
+        dragOverContainer = null;
+        currentDragData = null;
     }
 
     function removeItemFromContainer(rowId, containerId, itemIndex) {
@@ -263,9 +305,11 @@
                     containers: row.containers.map(container => {
                         if (container.id === containerId) {
                             const newItems = container.items.filter((_, index) => index !== itemIndex);
+                            const isEmpty = newItems.length === 0;
                             return {
                                 ...container,
-                                isEmpty: newItems.length === 0,
+                                isEmpty: isEmpty,
+                                tableName: isEmpty ? null : container.tableName, // 빈 컨테이너가 되면 테이블명 초기화
                                 items: newItems
                             };
                         }
@@ -277,10 +321,6 @@
         });
         // 아이템 제거 후 빈 컨테이너 보장
         ensureEmptyContainer(rowId);
-    }
-
-    function allowDrop(event) {
-        event.preventDefault();
     }
 
     function toggleLogic(rowId, containerId) {
@@ -456,7 +496,7 @@
         if (row) {
             console.log(`그룹 ${rowId} 환자수 조회`, row);
             
-            // API 호출 시뮬레이션 (1-2초 지연)
+            // API 호출 시뮬레이션
             setTimeout(() => {
                 const randomCount = Math.floor(Math.random() * 10000) + 1000;
                 rows = rows.map(r => r.id === rowId ? { 
@@ -467,6 +507,21 @@
             }, Math.random() * 1000 + 1000); // 1-2초 랜덤 지연
         }
     }
+
+    onMount(() => {
+        // 전역 드래그 종료 이벤트 리스너
+        const handleGlobalDragEnd = () => {
+            dragOverContainer = null;
+            currentDragData = null;
+            window.currentDragData = null; // 전역 변수도 초기화
+        };
+        
+        document.addEventListener('dragend', handleGlobalDragEnd);
+        
+        return () => {
+            document.removeEventListener('dragend', handleGlobalDragEnd);
+        };
+    });
 </script>
 
 <div class="flex bg-slate-100 h-screen">
@@ -478,8 +533,8 @@
     <!-- 메인 컨텐츠 -->
     <div class="ml-72 flex-1 flex flex-col overflow-x-auto">
         <!-- 상단 헤더 -->
-        <header class="flex fixed top-[60px] left-72 right-0 bg-white border-b border-slate-200 px-8 py-3 shadow-sm">
-            <div class="flex items-center justify-between gap-4 w-full">
+        <header class="flex fixed top-[60px] left-72 right-0 bg-white border-b border-slate-200 px-6 py-3 shadow-sm">
+            <div class="flex items-center justify-between gap-12 w-full">
                 <h1 class="text-lg font-semibold text-slate-800">코호트 정의하기</h1>
                 <input
                     type="text"
@@ -510,11 +565,8 @@
                                             class="relative inline-flex h-7 w-[76px] items-center rounded-full transition-all duration-200 ease-in-out focus:outline-none {row.type === 'NOT' ? 'bg-red-400' : row.id>2 ? 'bg-blue-500' : 'bg-blue-900'}"
                                             on:click={() => toggleRowType(row.id)}
                                         >
-                                            <!-- 배경 텍스트 -->
                                             <span class="absolute left-2 text-xs font-medium text-white {row.type === 'AND' ? 'opacity-100' : 'opacity-50'}">AND</span>
-                                            <span class="absolute right-2 text-xs font-medium text-white {row.type === 'NOT' ? 'opacity-100' : 'opacity-50'}">NOT</span>
-                                            
-                                            <!-- 슬라이더 -->
+                                            <span class="absolute right-2 text-xs font-medium text-white {row.type === 'NOT' ? 'opacity-100' : 'opacity-50'}">NOT</span>                                            
                                             <span class="inline-block h-5 w-8 transform rounded-full bg-white shadow-lg transition-transform duration-200 ease-in-out {row.type === 'NOT' ? 'translate-x-10' : 'translate-x-1'} flex items-center justify-center">
                                                 <span class="text-xs font-bold {row.type === 'NOT' ? 'text-red-500' : 'text-blue-500'}">
                                                     {row.type === 'NOT' ? 'NOT' : 'AND'}
@@ -530,35 +582,34 @@
                                     </div>
                                 {/if}
                                 <div class="flex items-center gap-2">
-                                    <div>
-                                        <h3 class="font-medium text-base flex items-center gap-2">
-                                            {#if editingRowId === row.id}
-                                                <input
-                                                    type="text"
-                                                    class="bg-white bg-opacity-90 text-gray-800 px-2 py-0.5 border border-white border-opacity-50 rounded text-sm focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 focus:border-transparent w-56"
-                                                    data-editing-row={row.id}
-                                                    bind:value={editingRowName}
-                                                    on:keydown={handleGroupNameKeydown}
-                                                    on:blur={saveGroupName}
-                                                />
-                                            {:else}
-                                                <span>{row.name}</span>
-                                                <button 
-                                                    class="p-1 hover:bg-white hover:bg-opacity-20 rounded transition-colors duration-200"
-                                                    on:click={() => startEditingGroupName(row.id, row.name)}
-                                                    title="그룹명 편집"
-                                                >
-                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                                    </svg>
-                                                </button>
-                                            {/if}
-                                            {row.type === 'NOT' ? '(제외)' : ''}
-                                        </h3>
-                                        <p class="text-xs text-white text-opacity-80 pt-0.5">
-                                            {row.type === 'NOT' ? '해당 조건을 만족하지 않는 환자' : '해당 조건을 만족하는 환자'}
-                                        </p>
-                                    </div>
+                                    <h3 class="font-medium text-base flex items-center gap-2">
+                                        {#if editingRowId === row.id}
+                                            <input
+                                                type="text"
+                                                class="bg-white bg-opacity-90 text-gray-800 px-2 py-0.5 border border-white border-opacity-50 rounded text-sm focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 focus:border-transparent w-56"
+                                                data-editing-row={row.id}
+                                                bind:value={editingRowName}
+                                                on:keydown={handleGroupNameKeydown}
+                                                on:blur={saveGroupName}
+                                            />
+                                        {:else}
+                                            <span>{row.name}</span>
+                                            <button 
+                                                aria-label="그룹명 수정"
+                                                class="p-1 hover:bg-white hover:bg-opacity-20 rounded transition-colors duration-200"
+                                                on:click={() => startEditingGroupName(row.id, row.name)}
+                                                title="그룹명 수정"
+                                            >
+                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                                </svg>
+                                            </button>
+                                        {/if}
+                                        {row.type === 'NOT' ? '(제외)' : ''}
+                                    </h3>
+                                    <p class="text-xs text-white text-opacity-80 pt-0.5">
+                                        {row.type === 'NOT' ? '해당 조건을 만족하지 않는 환자' : '해당 조건을 만족하는 환자'}
+                                    </p>
                                 </div>
                             </div>
                             
@@ -592,6 +643,7 @@
                                 </button>
                                 {#if rows.length > 1}
                                     <button 
+                                        aria-label="그룹 삭제"
                                         class="p-1.5 bg-white bg-opacity-20 rounded-lg hover:bg-opacity-30 transition-colors"
                                         on:click={() => removeRow(row.id)}
                                     >
@@ -614,30 +666,43 @@
                                         <div 
                                             class="border-2 border-dashed border-slate-300 rounded-lg p-6 min-w-[380px] flex items-center justify-center text-slate-500 bg-slate-50 hover:border-slate-400 hover:bg-slate-100 transition-all duration-200"
                                             on:drop={(e) => handleDrop(e, row.id, container.id)}
-                                            on:dragover={allowDrop}
+                                            on:dragover={(e) => handleDragOver(e, row.id, container.id)}
                                             role="button"
                                             tabindex="0"
                                         >
                                             <div class="text-center">
-                                                <div class="w-10 h-10 bg-slate-300 rounded-full flex items-center justify-center mx-auto mb-2">
-                                                    <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                                                    </svg>
+                                                <div>
+                                                    <div class="w-10 h-10 bg-slate-300 rounded-full flex items-center justify-center mx-auto mb-2">
+                                                        <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                                        </svg>
+                                                    </div>
+                                                    <h4 class="font-medium text-slate-700 mb-1 text-sm">테이블 별 컨테이너 추가</h4>
+                                                    <p class="text-xs text-slate-500">좌측에서 항목을 끌어다 놓으세요</p>
                                                 </div>
-                                                <h4 class="font-medium text-slate-700 mb-1 text-sm">테이블 별 컨테이너 추가</h4>
-                                                <p class="text-xs text-slate-500">좌측에서 항목을 끌어다 놓으세요</p>
                                             </div>
                                         </div>
                                     {:else}
-                                        <div class="bg-white rounded-lg border {style.border} p-3 min-w-[380px] shadow-sm overflow-x-auto">
+                                        <div class="bg-white rounded-lg border {style.border} p-3 min-w-[380px] shadow-sm overflow-x-auto relative">
                                             <div class="flex items-center justify-between mb-2">
                                                 <div class="flex items-center gap-2">
-                                                    <div class="w-5 h-5 bg-gradient-to-r {style.gradient} rounded-full flex items-center justify-center">
-                                                        <span class="text-xs font-semibold text-white">{getContainerNumber(getGlobalContainerIndex(rowIndex, containerIndex))}</span>
+                                                    <div class="w-5 h-5 bg-slate-300 rounded-full flex items-center justify-center">
+                                                        <span class="text-xs font-semibold text-slate-800">{getContainerNumber(getGlobalContainerIndex(rowIndex, containerIndex))}</span>
                                                     </div>
-                                                    <span class="text-xs font-medium text-slate-700">컨테이너 {containerIndex + 1}</span>
+                                                    <div class="flex items-center gap-4">
+                                                        <span class="text-sm font-medium text-slate-900">컨테이너 {containerIndex + 1}</span>
+                                                        {#if container.tableName}
+                                                            <div class="flex items-center gap-2">
+                                                                <div class="w-0.5 h-3 bg-slate-300 rounded-full"></div>
+                                                                <span class="text-sm font-semibold text-blue-900 px-2 py-0.5 rounded-full">
+                                                                    {container.tableName}
+                                                                </span>
+                                                            </div>
+                                                        {/if}
+                                                    </div>
                                                 </div>
                                                 <button 
+                                                    aria-label="컨테이너 삭제"
                                                     class="text-slate-400 hover:text-red-500 transition-colors"
                                                     on:click={() => removeContainer(row.id, container.id)}
                                                 >
@@ -647,50 +712,62 @@
                                                 </button>
                                             </div>
 
+                                            <!-- 드롭 불가능한 상태 -->
+                                            <div 
+                                                class="absolute inset-0 bg-red-50 border-2 border-red-500 border-dashed rounded-lg items-center justify-center z-10"
+                                                class:flex={dragOverContainer && dragOverContainer.rowId === row.id && dragOverContainer.containerId === container.id && !dragOverContainer.canDrop}
+                                                class:hidden={!(dragOverContainer && dragOverContainer.rowId === row.id && dragOverContainer.containerId === container.id && !dragOverContainer.canDrop)}
+                                            >
+                                                <div class="text-center">
+                                                    <div class="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                                                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/>
+                                                        </svg>
+                                                    </div>
+                                                    <h4 class="font-medium text-red-700 mb-1 text-sm">드롭 불가능</h4>
+                                                    <p class="text-xs text-red-500 mt-1">{container.tableName} 테이블 내 필드만 드롭 가능합니다.</p>
+                                                </div>
+                                            </div>
+
                                             <div class="border-t border-slate-200 pt-2">
                                                 <div 
                                                     class="min-h-[60px] space-y-1.5"
                                                     on:drop={(e) => handleDrop(e, row.id, container.id)}
-                                                    on:dragover={allowDrop}
+                                                    on:dragover={(e) => handleDragOver(e, row.id, container.id)}
                                                     role="button"
                                                     tabindex="0"
                                                 >
-                                                    {#if container.items.length === 0}
-                                                        <div class="text-center text-slate-400 py-4">
-                                                            <p class="text-xs">조건을 추가하세요</p>
-                                                        </div>
-                                                    {:else}
-                                                        {#each container.items as item, itemIndex}
-                                                            <div class="bg-slate-50 rounded-md p-2.5 border border-slate-200 hover:border-slate-300 transition-colors">
-                                                                <div class="flex items-center justify-between">
-                                                                    <button 
-                                                                        class="flex-1 text-left"
-                                                                        on:click={() => openFieldModal(row.id, container.id, itemIndex)}
-                                                                    >
-                                                                        <div class="flex items-center gap-2">
-                                                                            <span class="text-xs {style.text} bg-white px-1.5 py-0.5 rounded font-medium">{item.tableName}</span>
-                                                                            <span class="text-xs font-medium text-slate-800">{item.fieldName}</span>
+                                                    {#each container.items as item, itemIndex}
+                                                        <div class="bg-slate-50 rounded-md p-2.5 border border-slate-300 hover:border-slate-400 transition-colors">
+                                                            <div class="flex items-center justify-between">
+                                                                <button
+                                                                    aria-label="필드 별 모달 열기"
+                                                                    class="flex-1 text-left"
+                                                                    on:click={() => openFieldModal(row.id, container.id, itemIndex)}
+                                                                >
+                                                                    <div class="flex items-center gap-2">
+                                                                        <span class="text-xs font-medium text-slate-800">{item.fieldName}</span>
+                                                                    </div>
+                                                                    {#if item.conditions}
+                                                                        <div class="mt-1">
+                                                                            <span class="text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
+                                                                                {item.conditions}
+                                                                            </span>
                                                                         </div>
-                                                                        {#if item.conditions}
-                                                                            <div class="mt-1">
-                                                                                <span class="text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
-                                                                                    {item.conditions}
-                                                                                </span>
-                                                                            </div>
-                                                                        {/if}
-                                                                    </button>
-                                                                    <button 
-                                                                        class="text-slate-400 hover:text-red-500 transition-colors ml-2"
-                                                                        on:click={() => removeItemFromContainer(row.id, container.id, itemIndex)}
-                                                                    >
-                                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                                                                        </svg>
-                                                                    </button>
-                                                                </div>
+                                                                    {/if}
+                                                                </button>
+                                                                <button
+                                                                    aria-label="필드 삭제"
+                                                                    class="text-slate-400 hover:text-red-500 transition-colors ml-2"
+                                                                    on:click={() => removeItemFromContainer(row.id, container.id, itemIndex)}
+                                                                >
+                                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                                                    </svg>
+                                                                </button>
                                                             </div>
-                                                        {/each}
-                                                    {/if}
+                                                        </div>
+                                                    {/each}
                                                 </div>
                                             </div>
                                         </div>
@@ -717,7 +794,7 @@
                 </div>
             {/each}
             
-            <!-- 새 단계 추가 버튼 -->
+            <!-- 새 행 추가 버튼 -->
             <div class="flex justify-center">
                 <button 
                     class="flex items-center gap-2.5 px-24 py-5 border-2 border-dashed border-slate-300 rounded-lg hover:border-slate-400 transition-all duration-200 bg-white hover:bg-slate-50"
@@ -736,7 +813,7 @@
             </div>
         </main>
 
-        <!-- 하단 액션 바 -->
+        <!-- 하단 바 -->
         <footer class="fixed bottom-0 left-72 right-0 bg-white border-t border-slate-200 px-6 py-5">
             <div class="flex items-center justify-between">
                 <div class="text-xs text-slate-500">
