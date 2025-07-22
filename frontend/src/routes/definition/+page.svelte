@@ -533,7 +533,7 @@
     });
 </script>
 
-<div class="flex bg-slate-100 h-screen">
+<div class="flex bg-slate-200 h-screen">
     <!-- 좌측 사이드 바 -->
     <aside class="fixed h-full left-0 w-72 bg-white border-r border-slate-200 overflow-y-auto">
         <CategoryTree />
