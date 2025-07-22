@@ -3,11 +3,14 @@
     import FieldModal from './components/FieldModal.svelte';
     import { tick, onMount } from 'svelte';
 
+    let headerHeight;
+    let totalPatientsForProgress = 10000; // 전체 환자 수 (임시 데이터)
     let cohortName = '';
     let showModal = false;
     let selectedField = null;
     let selectedContainer = null;
     let selectedRow = null;
+    let isFinalCountLoading = false;
 
     // 그룹 이름 수정 상태
     let editingRowId = null;
@@ -43,6 +46,8 @@
     const rowStyles = [
         {
             gradient: 'from-blue-800 to-blue-950',
+            summary: 'blue-800',
+            bar: 'bg-blue-800',
             bg: 'bg-blue-50',
             border: 'border-blue-200',
             text: 'text-blue-700',
@@ -51,6 +56,8 @@
         },
         {
             gradient: 'from-blue-600 to-blue-700',
+            summary: 'blue-600',
+            bar: 'bg-blue-600',
             bg: 'bg-blue-50',
             border: 'border-blue-200',
             text: 'text-blue-700',
@@ -59,6 +66,8 @@
         },
         {
             gradient: 'from-blue-400 to-blue-500',
+            summary: 'blue-400',
+            bar: 'bg-blue-400',
             bg: 'bg-blue-50',
             border: 'border-blue-200',
             text: 'text-blue-700',
@@ -531,10 +540,10 @@
     </aside>
 
     <!-- 메인 컨텐츠 -->
-    <div class="ml-72 flex-1 flex flex-col overflow-x-auto">
+    <div class="ml-72 flex-1 flex flex-col h-screen">
         <!-- 상단 헤더 -->
-        <header class="flex fixed top-[60px] left-72 right-0 bg-white border-b border-slate-200 px-6 py-3 shadow-sm">
-            <div class="flex items-center justify-between gap-12 w-full">
+        <header bind:clientHeight={headerHeight} class="fixed top-[60px] left-72 right-0 bg-white border-b border-slate-200 px-6 pt-3 pb-2 z-20 shadow-sm">
+            <div class="flex items-center justify-between gap-4 w-full">
                 <h1 class="text-lg font-semibold text-slate-800">코호트 정의하기</h1>
                 <input
                     type="text"
@@ -542,18 +551,114 @@
                     placeholder="코호트 이름을 입력하세요"
                     bind:value={cohortName}
                 />
-                <div class="text-xs text-slate-500 font-mono bg-slate-100 px-2.5 py-1.5 rounded-lg">
-                    {generateFormula()}
+                <div class="flex items-center gap-3 flex-shrink-0">
+                    <button class="bg-blue-800 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-semibold hover:bg-blue-900 transition-colors shadow-md">
+                        <span>코호트 생성</span>
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"></path></svg>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="mt-3 pt-2 border-t border-slate-200">
+                <div class="flex items-center justify-between h-[100px] py-2 px-2">
+                    <div class="flex items-center gap-0 h-full overflow-x-auto pr-4">
+                        {#each rows as row, i}
+                            {@const rowStyle = getRowStyle(i)}
+                            {#if i > 0 && row.type !== 'initial'}
+                                <div class="flex-shrink-0 flex flex-row items-center justify-center h-full">
+                                    <div class="w-2 h-px bg-slate-300"></div>
+                                        {#if row.rowOperator === 'NOT'}
+                                            <span class="text-xs font-bold text-red-500 bg-red-50 px-1.5 py-0.5 rounded-full border border-red-500">NOT</span>
+                                        {:else}
+                                            <span class="text-xs font-bold text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded-full border border-slate-300">AND</span>
+                                        {/if}
+                                    <div class="w-2 h-px bg-slate-300"></div>
+                                </div>
+                            {/if}
+                            
+                            {@const percentage = totalPatientsForProgress > 0 ? ((row.patientCount / totalPatientsForProgress) * 100) : 0}
+                            <div class="px-4 gap-2 bg-slate-100 border-2 border-{rowStyle.summary} rounded-lg p-2.5 w-[180px] h-full flex flex-col justify-between shadow-sm flex-shrink-0">
+                                <div class="flex justify-between items-start">
+                                    <div class="text-sm font-bold text-{rowStyle.summary} border-{rowStyle.summary} truncate pr-2">{row.name}</div>
+                                    <button 
+                                        class="text-{rowStyle.summary} hover:text-blue-800 transition-colors flex-shrink-0"
+                                        on:click|stopPropagation={() => executeRowQuery(row.id)}
+                                        title="환자 수 조회"
+                                    >
+                                        {#if row.isLoading}
+                                            <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                        {:else}
+                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 -2 20 20"><path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"></path></svg>
+                                        {/if}
+                                    </button>
+                                </div>
+                                
+                                <div class="space-y-2 text-center">
+                                    <div class="mx-auto bg-slate-300 rounded-full h-2 overflow-hidden">
+                                        <div class="{rowStyle.bar} h-2 rounded-full" style="width: {row.patientCount > 0 ? percentage.toFixed(1) : 0}%"></div>
+                                    </div>
+                                    {#if row.patientCount > 0}
+                                        <p class="text-xs text-blue-700 font-medium">
+                                            {row.patientCount.toLocaleString()} / {totalPatientsForProgress.toLocaleString()}
+                                            <span class="font-normal {rowStyle.text}">({percentage.toFixed(1)}%)</span>
+                                        </p>
+                                    {:else}
+                                         <p class="text-xs text-slate-400">환자 수 미조회</p>
+                                    {/if}
+                                </div>
+                            </div>
+                        {/each}
+                    </div>
+                    <div class="border-l border-slate-200 h-full">
+                        <div class="px-4 ml-4 gap-2 bg-slate-100 border-2 border-slate-300 rounded-lg p-2.5 w-[180px] h-full flex flex-col justify-between shadow-sm flex-shrink-0">
+                            <div class="flex justify-between items-start">
+                                <div class="text-sm font-bold text-blue-900 border-slate-300 truncate pr-2">최종 환자 수</div>
+                                <button 
+                                    class="text-blue-900 flex-shrink-0"
+                                    on:click|stopPropagation={() => executeRowQuery(row.id)}
+                                    title="환자 수 조회"
+                                >
+                                    {#if isFinalCountLoading}
+                                        <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                    {:else}
+                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 -2 20 20"><path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"></path></svg>
+                                    {/if}
+                                </button>
+                            </div>
+                            
+                            <div class="space-y-2 text-center">
+                                <div class="mx-auto bg-slate-300 rounded-full h-2 overflow-hidden">
+                                    <div class="bg-slate-300 h-2 rounded-full" style="width: percentage.toFixed(1)%"></div>
+                                </div>
+                                {#if -1 > 0} <!-- finalPatientCount > 0 -->
+                                    <p class="text-xs text-blue-900 font-medium">
+                                        <!-- {finalPatientCount.toLocaleString()} / {totalPatientsForProgress.toLocaleString()} -->
+                                        <!-- <span class="font-normal text-blue-700">({(finalPatientCount / totalPatientsForProgress * 100).toFixed(1)}%)</span> -->
+                                    </p>
+                                {:else}
+                                    <p class="text-xs text-slate-400">환자 수 미조회</p>
+                                {/if}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </header>
 
-        <!-- 메인 콘텐츠 영역 -->
-        <main class="flex-1 overflow-y-auto px-5 space-y-4 pb-24 pt-[75px]">
-            <!-- 쿼리 단계 카드들 -->
-            {#each rows as row, rowIndex}
-                {@const style = getRowStyle(rowIndex)}
-                <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow duration-300">
+        <!-- 메인 콘텐츠 영역 (스크롤) -->
+        <!-- <div class="flex-1 overflow-y-auto" style="padding-top: {headerHeight ? headerHeight + 'px' : '125px'}; transition: padding-top 0.2s ease-out;"> -->
+        <div class="flex-1 overflow-y-auto mt-[180px] mb-[100px] h-screen">
+        <!-- 쿼리 단계 카드들 -->
+            <main class="px-5 space-y-4 py-6 overflow-y-auto h-screen">
+                {#each rows as row, rowIndex}
+                    {@const style = getRowStyle(rowIndex)}
+                    <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow duration-300">
                     <!-- 카드 헤더 -->
                     <div class="bg-gradient-to-r {style.gradient} px-5 py-3 text-white">
                         <div class="flex items-center justify-between">
@@ -614,33 +719,9 @@
                             </div>
                             
                             <div class="flex items-center gap-3">
-                                <button class="bg-white bg-opacity-20 rounded-lg text-xs font-medium hover:bg-opacity-30 transition-colors flex items-center gap-1.5"
-                                    on:click={() => executeRowQuery(row.id)}>
-                                    <!-- 환자수 표시 -->
-                                    {#if row.isLoading}
-                                        <div class="flex items-center gap-2 rounded-lg px-3 py-1.5">
-                                            <svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
-                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                <path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                            </svg>
-                                            <span class="text-xs font-semibold">조회 중...</span>
-                                        </div>
-                                    {:else if row.patientCount > 0}
-                                        <div class="flex items-center gap-2 bg-green-500 bg-opacity-30 rounded-lg px-3 py-1.5 border border-green-300 border-opacity-30">
-                                            <svg class="w-3.5 h-3.5 text-green-200" fill="currentColor" viewBox="0 0 24 24">
-                                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                                            </svg>
-                                            <span class="text-xs font-bold text-green-100">{row.patientCount.toLocaleString()}명</span>
-                                        </div>
-                                    {:else}
-                                        <div class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-white">
-                                            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
-                                                <path d="M5 4v16l14-8z"/>
-                                            </svg>
-                                            <span class="text-xs">환자 수 조회</span>
-                                        </div>
-                                    {/if}
-                                </button>
+                                <div class="text-xs text-slate-500 font-mono bg-slate-100 px-2.5 py-1.5 rounded-lg">
+                                    {generateFormula()}
+                                </div>
                                 {#if rows.length > 1}
                                     <button 
                                         aria-label="그룹 삭제"
@@ -812,25 +893,7 @@
                 </button>
             </div>
         </main>
-
-        <!-- 하단 바 -->
-        <footer class="fixed bottom-0 left-72 right-0 bg-white border-t border-slate-200 px-6 py-5">
-            <div class="flex items-center justify-between">
-                <div class="text-xs text-slate-500">
-                    총 {rows.length}개 그룹 · 
-                    최종 대상: <span class="font-medium text-slate-800">{rows.reduce((sum, row) => sum + row.patientCount, 0).toLocaleString()}명</span>
-                </div>
-                <button 
-                    class="px-4 py-2 bg-gradient-to-r from-slate-700 to-slate-800 text-white rounded-lg hover:from-slate-800 hover:to-slate-900 transition-all duration-200 font-medium flex items-center gap-2 text-sm"
-                    on:click={executeAllCohorts}
-                >
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                    코호트 생성
-                </button>
-            </div>
-        </footer>
+        </div>
     </div>
 </div> 
 
