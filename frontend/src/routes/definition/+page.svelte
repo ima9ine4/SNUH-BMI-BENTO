@@ -652,8 +652,7 @@
         </header>
 
         <!-- 메인 콘텐츠 영역 (스크롤) -->
-        <!-- <div class="flex-1 overflow-y-auto" style="padding-top: {headerHeight ? headerHeight + 'px' : '125px'}; transition: padding-top 0.2s ease-out;"> -->
-        <div class="flex-1 overflow-y-auto mt-[180px] mb-[100px] h-screen">
+        <div class="flex-1 overflow-y-auto mt-[180px] h-screen">
         <!-- 쿼리 단계 카드들 -->
             <main class="px-5 space-y-4 py-6 overflow-y-auto h-screen">
                 {#each rows as row, rowIndex}
@@ -878,7 +877,7 @@
             <!-- 새 행 추가 버튼 -->
             <div class="flex justify-center">
                 <button 
-                    class="flex items-center gap-2.5 px-24 py-5 border-2 border-dashed border-slate-300 rounded-lg hover:border-slate-400 transition-all duration-200 bg-white hover:bg-slate-50"
+                    class="flex items-center gap-2.5 px-24 mb-[100px] py-5 border-2 border-dashed border-slate-300 rounded-lg hover:border-slate-400 transition-all duration-200 bg-white hover:bg-slate-50"
                     on:click={addRow}
                 >
                     <div class="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center">
