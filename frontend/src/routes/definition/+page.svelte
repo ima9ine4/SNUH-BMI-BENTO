@@ -540,7 +540,7 @@
     </aside>
 
     <!-- 메인 컨텐츠 -->
-    <div class="ml-72 flex-1 flex flex-col h-screen">
+    <div class="ml-72 flex-1 flex flex-col h-screen bg-slate-200">
         <!-- 상단 헤더 -->
         <header bind:clientHeight={headerHeight} class="fixed top-[60px] left-72 right-0 bg-white border-b border-slate-200 px-6 pt-3 pb-2 z-20 shadow-sm">
             <div class="flex items-center justify-between gap-4 w-full">
@@ -636,7 +636,7 @@
         </header>
 
         <!-- 메인 콘텐츠 영역 (스크롤) -->
-        <div class="flex-1 overflow-y-auto mt-[180px] h-screen">
+        <div class="flex-1 overflow-y-auto bg-slate-200 mt-[180px] h-screen">
         <!-- 쿼리 단계 카드들 -->
             <main class="px-5 space-y-4 py-6 overflow-y-auto h-screen">
                 {#each rows as row, rowIndex}
