@@ -24,7 +24,7 @@
         {
             id: 1,
             type: 'initial', // initial, AND, NOT
-            name: '그룹 1', // 그룹 이름 필드
+            name: '그룹 A', // 그룹 이름 필드
             containers: [
                 {
                     id: 1,
@@ -39,7 +39,7 @@
             isLoading: false
         }
     ];
-    let nextRowId = 2;
+    let nextRowId = 1;
     let nextContainerId = 2;
     let scrollRefs = {};
 
@@ -100,9 +100,9 @@
 
     function addRow() {
         const newRow = {
-            id: nextRowId++,
+            id: ++nextRowId,
             type: 'AND', // initial, AND, NOT
-            name: `그룹 ${nextRowId - 1}`, // 새로운 행에 이름 할당
+            name: `그룹 ${String.fromCharCode(65 + nextRowId - 1 )}`,
             containers: [
                 {
                     id: nextContainerId++,
@@ -503,7 +503,7 @@
         
         const row = rows.find(r => r.id === rowId);
         if (row) {
-            console.log(`그룹 ${rowId} 환자수 조회`, row);
+            console.log(`그룹 ${String.fromCharCode(65 + rowId - 1)} 환자수 조회`, row);
             
             // API 호출 시뮬레이션
             setTimeout(() => {
