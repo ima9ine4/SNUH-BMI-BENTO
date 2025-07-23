@@ -562,9 +562,9 @@
             <div class="mt-3 pt-2 border-t border-slate-200">
                 <div class="flex items-center justify-between h-[100px] py-2 px-2">
                     <div class="flex items-center gap-0 h-full overflow-x-auto pr-4">
-                        {#each rows as row, i}
-                            {@const rowStyle = getRowStyle(i)}
-                            {#if i > 0 && row.type !== 'initial'}
+                        {#each rows as row, rowIndex}
+                            {@const rowStyle = getRowStyle(rowIndex)}
+                            {#if rowIndex > 0 && row.type !== 'initial'}
                                 <div class="flex-shrink-0 flex flex-row items-center justify-center h-full">
                                     <div class="w-2 h-px bg-slate-300"></div>
                                         {#if row.rowOperator === 'NOT'}
