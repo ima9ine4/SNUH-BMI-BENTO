@@ -718,9 +718,6 @@
                             </div>
                             
                             <div class="flex items-center gap-3">
-                                <div class="text-xs text-slate-500 font-mono bg-slate-100 px-2.5 py-1.5 rounded-lg">
-                                    {generateFormula()}
-                                </div>
                                 {#if rows.length > 1}
                                     <button 
                                         aria-label="그룹 삭제"
