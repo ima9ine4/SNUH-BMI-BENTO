@@ -578,23 +578,7 @@
                             
                             {@const percentage = totalPatientsForProgress > 0 ? ((row.patientCount / totalPatientsForProgress) * 100) : 0}
                             <div class="px-4 gap-2 bg-slate-100 border-2 border-{rowStyle.summary} rounded-lg p-2.5 w-[180px] h-full flex flex-col justify-between shadow-sm flex-shrink-0">
-                                <div class="flex justify-between items-start">
-                                    <div class="text-sm font-bold text-{rowStyle.summary} border-{rowStyle.summary} truncate pr-2">{row.name}</div>
-                                    <button 
-                                        class="text-{rowStyle.summary} hover:text-blue-800 transition-colors flex-shrink-0"
-                                        on:click|stopPropagation={() => executeRowQuery(row.id)}
-                                        title="환자 수 조회"
-                                    >
-                                        {#if row.isLoading}
-                                            <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                <path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                            </svg>
-                                        {:else}
-                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 -2 20 20"><path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"></path></svg>
-                                        {/if}
-                                    </button>
-                                </div>
+                                <div class="text-sm font-bold text-{rowStyle.summary} border-{rowStyle.summary} truncate pr-2">{row.name}</div>
                                 
                                 <div class="space-y-2 text-center">
                                     <div class="mx-auto bg-slate-300 rounded-full h-2 overflow-hidden">
