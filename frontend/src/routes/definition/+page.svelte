@@ -133,29 +133,21 @@
         });
     }
 
-    function saveGroupName() {
-        if (editingRowId && editingRowName.trim()) {
-            rows = rows.map(row => {
-                if (row.id === editingRowId) {
-                    return { ...row, name: editingRowName.trim() };
-                }
-                return row;
-            });
-        }
-        editingRowId = null;
-        editingRowName = '';
-    }
-
-    function cancelEditingGroupName() {
-        editingRowId = null;
-        editingRowName = '';
-    }
-
     function handleGroupNameKeydown(event) {
         if (event.key === 'Enter') {
-            saveGroupName();
+            if (editingRowId && editingRowName.trim()) {
+                rows = rows.map(row => {
+                    if (row.id === editingRowId) {
+                        return { ...row, name: editingRowName.trim() };
+                    }
+                    return row;
+                });
+            }
+            editingRowId = null;
+            editingRowName = '';
         } else if (event.key === 'Escape') {
-            cancelEditingGroupName();
+            editingRowId = null;
+            editingRowName = '';
         }
     }
 
