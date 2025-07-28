@@ -4,14 +4,15 @@
     import { tick, onMount } from 'svelte';
 
     let headerHeight;
-    let totalPatientsForProgress = 10000; // 전체 환자 수 (임시 데이터)
     let cohortName = '';
     let showModal = false;
     let selectedField = null;
     let selectedContainer = null;
     let selectedRow = null;
     let isFinalCountLoading = false;
-
+    let finalPatientCount = 0;
+    let finalPatientBase = 0;
+    let finalPatientPercent = 0;
     // 그룹 이름 수정 상태
     let editingRowId = null;
     let editingRowName = '';
@@ -35,6 +36,8 @@
                 }
             ],
             patientCount: 0,
+            patientBase: 0,
+            patientPercent: 0,
             rowOperator: 'AND', // 이 행 앞에 붙을 연산자
             isLoading: false
         }
@@ -113,6 +116,8 @@
                 }
             ],
             patientCount: 0,
+            patientBase: 0,
+            patientPercent: 0,
             rowOperator: 'AND',
             isLoading: false
         };
@@ -427,24 +432,38 @@
         console.log('코호트 생성');
     }
 
-    function executeRowQuery(rowId) {
-        // 로딩 상태 시작
-        rows = rows.map(r => r.id === rowId ? { ...r, isLoading: true } : r);
+    async function fetchCohortPatientCounts() {
+        const res = await fetch('/patient-count-testdata.json');  // 임시 더미데이터
+        if (!res.ok) throw new Error('데이터를 불러올 수 없습니다');
+        return await res.json();
+    }
+
+    async function getPatientCount() {
+        isFinalCountLoading = true;
+        rows = rows.map(row => ({ ...row, isLoading: true }));
         
-        const row = rows.find(r => r.id === rowId);
-        if (row) {
-            console.log(`그룹 ${String.fromCharCode(65 + rowId - 1)} 환자수 조회`, row);
-            
-            // API 호출 시뮬레이션
-            setTimeout(() => {
-                const randomCount = Math.floor(Math.random() * 10000) + 1000;
-                rows = rows.map(r => r.id === rowId ? { 
-                    ...r, 
-                    patientCount: randomCount,
-                    isLoading: false 
-                } : r);
-            }, Math.random() * 1000 + 1000); // 1-2초 랜덤 지연
-        }
+        const data = await fetchCohortPatientCounts();
+
+        // containerCounts 배열을 rows에 매핑
+        rows = rows.map((row, idx) => {
+            const patientCount = data.containerCounts[idx] ?? 0;
+            const patientBase = idx!==0? data.containerCounts[idx-1] ?? 0 : data.containerCounts[idx] ?? 0;
+            const patientPercent = (patientCount / patientBase) * 100;
+            return {
+                ...row,
+                patientCount: patientCount,
+                patientBase: patientBase,
+                patientPercent: patientPercent,
+                isLoading: false
+            };
+        });
+        
+        finalPatientBase = data.totalPatients;
+        finalPatientCount = data.finalPatientCount;
+        finalPatientPercent = finalPatientCount / finalPatientBase * 100;
+        isFinalCountLoading = false;
+    }
+
     }
 
     onMount(() => {
@@ -490,7 +509,7 @@
             </div>
             
             <div class="mt-3 pt-2 border-t border-slate-200">
-                <div class="flex items-center justify-between h-[100px] py-2 px-2">
+                <div class="flex items-center justify-between h-[110px] py-2 px-2">
                     <div class="flex items-center gap-0 h-full overflow-x-auto pr-4">
                         {#each rows as row, rowIndex}
                             {@const rowStyle = getRowStyle(rowIndex)}
@@ -506,20 +525,31 @@
                                 </div>
                             {/if}
                             
-                            {@const percentage = totalPatientsForProgress > 0 ? ((row.patientCount / totalPatientsForProgress) * 100) : 0}
                             <div class="px-4 gap-2 bg-slate-100 border-2 border-{rowStyle.summary} rounded-lg p-2.5 w-[180px] h-full flex flex-col justify-between shadow-sm flex-shrink-0">
-                                <div class="text-sm font-bold text-{rowStyle.summary} border-{rowStyle.summary} truncate pr-2">{row.name}</div>
-                                
-                                <div class="space-y-2 text-center">
-                                    <div class="mx-auto bg-slate-300 rounded-full h-2 overflow-hidden">
-                                        <div class="{rowStyle.bar} h-2 rounded-full" style="width: {row.patientCount > 0 ? percentage.toFixed(1) : 0}%"></div>
-                                    </div>
-                                    {#if row.patientCount > 0}
-                                        <p class="text-xs text-blue-700 font-medium">
-                                            {row.patientCount.toLocaleString()} / {totalPatientsForProgress.toLocaleString()}
-                                            <span class="font-normal {rowStyle.text}">({percentage.toFixed(1)}%)</span>
+                                <div class="flex justify-between items-center">
+                                    <div class="text-sm font-bold text-{rowStyle.summary} border-{rowStyle.summary} truncate pr-2">{row.name}</div>
+                                    {#if row.isLoading}
+                                        <div class="flex justify-end">
+                                            <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                        </div>
+                                    {/if}
+                                </div>
+                                <div class="space-y-1.5 text-center">
+                                    {#if row.patientBase > 0}
+                                        <div class="mx-auto bg-slate-300 rounded-full h-3 overflow-hidden">
+                                            <div class="{rowStyle.bar} h-3 rounded-full" style="width: {row.patientPercent.toFixed(1)}%"></div>
+                                        </div>
+                                        <p class="text-[10px] text-blue-700 font-medium pt-0">
+                                            {row.patientCount.toLocaleString()} / {row.patientBase.toLocaleString()}
+                                            <span class="font-normal {rowStyle.text}">({row.patientPercent.toFixed(1)}%)</span>
                                         </p>
                                     {:else}
+                                        <div class="mx-auto bg-slate-300 rounded-full h-3 overflow-hidden">
+                                            <!-- 빈 progress bar -->
+                                        </div>
                                          <p class="text-xs text-slate-400">환자 수 미조회</p>
                                     {/if}
                                 </div>
@@ -532,7 +562,7 @@
                                 <div class="text-sm font-bold text-blue-900 border-slate-300 truncate pr-2">최종 환자 수</div>
                                 <button 
                                     class="text-blue-900 flex-shrink-0"
-                                    on:click|stopPropagation={() => executeRowQuery(row.id)}
+                                    on:click|stopPropagation={getPatientCount}
                                     title="환자 수 조회"
                                 >
                                     {#if isFinalCountLoading}
@@ -546,16 +576,19 @@
                                 </button>
                             </div>
                             
-                            <div class="space-y-2 text-center">
-                                <div class="mx-auto bg-slate-300 rounded-full h-2 overflow-hidden">
-                                    <div class="bg-slate-300 h-2 rounded-full" style="width: percentage.toFixed(1)%"></div>
-                                </div>
-                                {#if -1 > 0} <!-- finalPatientCount > 0 -->
-                                    <p class="text-xs text-blue-900 font-medium">
-                                        <!-- {finalPatientCount.toLocaleString()} / {totalPatientsForProgress.toLocaleString()} -->
-                                        <!-- <span class="font-normal text-blue-700">({(finalPatientCount / totalPatientsForProgress * 100).toFixed(1)}%)</span> -->
+                            <div class="space-y-1 text-center">
+                                {#if finalPatientBase > 0}
+                                    <div class="mx-auto bg-slate-300 rounded-full h-3 overflow-hidden">
+                                        <div class="bg-blue-900 h-3 rounded-full" style="width: {finalPatientPercent.toFixed(1)}%"></div>
+                                    </div>
+                                    <p class="text-[10px] text-blue-900 font-medium">
+                                        {finalPatientCount.toLocaleString()} / {finalPatientBase.toLocaleString()}
+                                        <span class="font-normal text-blue-900">({finalPatientPercent.toFixed(1)}%)</span>
                                     </p>
                                 {:else}
+                                    <div class="mx-auto bg-slate-300 rounded-full h-3 overflow-hidden">
+                                        <!-- 빈 progress bar -->
+                                    </div>
                                     <p class="text-xs text-slate-400">환자 수 미조회</p>
                                 {/if}
                             </div>

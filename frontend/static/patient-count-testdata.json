@@ -1,0 +1,11 @@
+{
+	"meggage": "Cohort successfully created",
+	"containerCounts": [
+		2767929,
+		1286030,
+    300000
+	],
+	"totalPatients": 2767929,
+	"finalPatientCount": 300000,
+	"elapsedTime": 1131
+}
