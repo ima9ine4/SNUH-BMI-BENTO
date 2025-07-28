@@ -416,68 +416,6 @@
         return (globalIndex + 1).toString();
     }
 
-    function generateFormula() {
-        let formula = '';
-        let rowFormulas = [];
-        
-        rows.forEach((row, rowIndex) => {
-            // 비어있지 않은 컨테이너들만 필터링
-            const nonEmptyContainers = row.containers.filter(container => !container.isEmpty);
-            
-            if (nonEmptyContainers.length === 0) {
-                return; // 빈 행은 건너뛰기
-            }
-            
-            let rowFormula = '';
-            
-            // 컨테이너 번호들 생성 (전역 인덱스 사용)
-            const containerNumbers = nonEmptyContainers.map((container) => {
-                const originalIndex = row.containers.indexOf(container);
-                return getContainerNumber(getGlobalContainerIndex(rowIndex, originalIndex));
-            });
-            
-            // 컨테이너가 하나뿐인 경우
-            if (containerNumbers.length === 1) {
-                rowFormula += containerNumbers[0];
-            } else {
-                // 컨테이너들을 순서대로 두 개씩 괄호로 묶기
-                let result = containerNumbers[0];
-                
-                for (let i = 1; i < containerNumbers.length; i++) {
-                    const prevContainerIndex = row.containers.indexOf(nonEmptyContainers[i-1]);
-                    const logic = row.containers[prevContainerIndex].logic;
-                    
-                    // 두 개씩 괄호로 묶기
-                    result = `(${result} ${logic} ${containerNumbers[i]})`;
-                }
-                rowFormula += result;
-            }
-            rowFormulas.push({
-                formula: rowFormula,
-                operator: row.rowOperator,
-                isFirst: rowIndex === 0
-            });
-        });
-    
-        // 행들을 순서대로 두 개씩 괄호로 묶기
-        if (rowFormulas.length === 0) {
-            return '조건을 설정해주세요';
-        } else if (rowFormulas.length === 1) {
-            return rowFormulas[0].formula;
-        } else {
-            let result = rowFormulas[0].formula;
-            for (let i = 1; i < rowFormulas.length; i++) {
-                const operator = rowFormulas[i].operator;
-                if (operator === 'NOT') {
-                    result = `(${result} NOT ${rowFormulas[i].formula})`;
-                } else {
-                    result = `(${result} AND ${rowFormulas[i].formula})`;
-                }
-            }
-            return result;
-        }
-    }
-
     function openFieldModal(rowId, containerId, itemIndex) {
         selectedRow = rowId;
         selectedContainer = containerId;
