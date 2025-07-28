@@ -88,6 +88,7 @@
     }
 
     function toggleRowType(rowId) {
+        resetAllPatientCounts();
         rows = rows.map(row => {
             if (row.id === rowId) {
                 const newType = row.type === 'NOT' ? 'AND' : 'NOT';
@@ -181,6 +182,7 @@
     }
 
     function removeContainer(rowId, containerId) {
+        resetAllPatientCounts(); // 환자수 초기화
         rows = rows.map(row => {
             if (row.id === rowId) {
                 const newContainers = row.containers.filter(c => c.id !== containerId);
@@ -203,6 +205,7 @@
     }
 
     function removeRow(rowId) {
+        resetAllPatientCounts(); // 환자수 초기화
         if (rows.length > 1) {
             rows = rows.filter(row => row.id !== rowId);
             if(rows.length === 1) {
@@ -239,6 +242,7 @@
 
 
     function handleDrop(event, rowId, containerId) {
+        resetAllPatientCounts(); // 환자수 초기화
         event.preventDefault();
         const dragDataString = event.dataTransfer.getData('text/plain');
         if (!dragDataString) return;
@@ -304,6 +308,7 @@
     }
 
     function removeItemFromContainer(rowId, containerId, itemIndex) {
+        resetAllPatientCounts(); // 환자수 초기화
         rows = rows.map(row => {
             if (row.id === rowId) {
                 return {
@@ -464,6 +469,18 @@
         isFinalCountLoading = false;
     }
 
+    function resetAllPatientCounts() {
+        rows = rows.map(row => ({
+                ...row,
+                patientCount: 0,
+                patientBase: 0,
+                patientPercent: 0,
+                isLoading: false
+            }));
+            finalPatientCount = 0;
+            finalPatientBase = 0;
+            finalPatientPercent = 0;
+            isFinalCountLoading = false;
     }
 
     onMount(() => {
