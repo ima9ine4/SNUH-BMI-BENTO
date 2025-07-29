@@ -3,11 +3,11 @@
 
   export let fieldName = "";
   export let tableName = "";
-  export let onApply = () => {}; // 적용 버튼 콜백
+  export let onSelectionChange = () => {}; // 선택 상태 변경 시 호출되는 콜백
   
   let selectedItems = []; // 선택된 항목들
-  let searchKeyword = ""; // 통합 검색
 
+  let searchKeyword = ""; // 통합 검색
   let searchConceptId = "";
   let searchConceptName = "";
   let searchSnuhId = "";
@@ -94,17 +94,20 @@
     return selectedItems.some(selected => selected.conceptId === item.conceptId);
   }
 
-  // 적용 버튼 핸들러
-  function handleApply() {
+  // selectedItems가 변경될 때마다 부모에게 알림
+  $: if (onSelectionChange) {
+    const conceptCount = Object.keys(selectedGrouped).length;
+    const itemCount = selectedItems.length;
+
     const conditions = {
       fieldName,
       tableName,
       selectedItems: [...selectedItems],
-      displayText: selectedItems.length > 0 
-        ? `${selectedItems.length}개 선택됨 (${selectedItems.map(item => item.name).join(', ')})`
-        : '선택된 항목 없음'
+      conceptCount: conceptCount,
+      itemCount: itemCount,
+      summary: conceptCount > 0 ? `컨셉 ${conceptCount}개 선택됨` : null
     };
-    onApply(conditions);
+    onSelectionChange(conditions);
   }
 
   onMount(() => {

@@ -4,7 +4,7 @@
   export let fieldData = null; // { fieldName, tableName, fieldType }
   export let onApply = () => {};
   export let onClose = () => {};
-  let internalConditions = null;
+  let selectedData = null;
 
   // 필드 타입별 width/height 결정 (타입 추가 예정)
   $: modalWidth = fieldData?.fieldType === 'lookup' ? '1000px'
@@ -15,13 +15,18 @@
                   : 'auto';
 
   function handleClose() {
+    selectedData = null;
     onClose();
   }
-
+  
   function handleApply() {
-    if (internalConditions) {
-      onApply(internalConditions);
+    if (selectedData) {
+      onApply(selectedData);
     }
+  }
+
+  function handleSelectionChange(data) {
+    selectedData = data;
   }
 
 </script>
@@ -55,8 +60,7 @@
           <LookupField
             fieldName={fieldData.fieldName}
             tableName={fieldData.tableName}
-            onApply={(conditions) => internalConditions = conditions}
-            onCancel={handleClose}
+            onSelectionChange={handleSelectionChange}
           />
         {:else}
           <div class="flex flex-col items-center justify-center h-full">
