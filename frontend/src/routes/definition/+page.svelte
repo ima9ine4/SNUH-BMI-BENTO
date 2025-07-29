@@ -782,8 +782,13 @@
                                                                     class="flex-1 text-left"
                                                                     on:click={() => openFieldModal(row.id, container.id, itemIndex)}
                                                                 >
-                                                                    <div class="flex items-center gap-2">
+                                                                    <div class="flex justify-between items-center gap-2">
                                                                         <span class="text-xs font-medium text-slate-800">{item.fieldName}</span>
+                                                                        {#if item.summary}
+                                                                            <span class="text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded font-medium">
+                                                                                {item.summary}
+                                                                            </span>
+                                                                        {/if}
                                                                     </div>
                                                                     {#if item.conditions}
                                                                         <div class="mt-1">
@@ -878,7 +883,9 @@
                                         if (index === selectedField) {
                                             return {
                                                 ...item,
-                                                conditions: conditions.displayText
+                                                conditions: conditions.displayText,
+                                                summary: conditions.summary || null,
+                                                hasConditions: Boolean(conditions.displayText)
                                             };
                                         }
                                         return item;
