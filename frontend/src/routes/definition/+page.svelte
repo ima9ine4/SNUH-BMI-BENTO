@@ -727,7 +727,7 @@
                                                         <span class="text-xs font-semibold text-slate-800">{getContainerNumber(getGlobalContainerIndex(rowIndex, containerIndex))}</span>
                                                     </div>
                                                     <div class="flex items-center gap-4">
-                                                        <span class="text-sm font-medium text-slate-900">컨테이너 {containerIndex + 1}</span>
+                                                        <span class="text-sm font-medium text-slate-900">컨테이너</span>
                                                         {#if container.tableName}
                                                             <div class="flex items-center gap-2">
                                                                 <div class="w-0.5 h-3 bg-slate-300 rounded-full"></div>
