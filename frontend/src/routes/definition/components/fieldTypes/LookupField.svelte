@@ -3,9 +3,15 @@
 
   export let fieldName = "";
   export let tableName = "";
+  export let existingData = null; // 기존 선택된 데이터
   export let onSelectionChange = () => {}; // 선택 상태 변경 시 호출되는 콜백
   
   let selectedItems = []; // 선택된 항목들
+
+  // 기존 데이터가 있으면 초기값으로 설정
+  $: if (existingData && existingData.selectedItems) {
+    selectedItems = [...existingData.selectedItems];
+  }
 
   let searchKeyword = ""; // 통합 검색
   let searchConceptId = "";

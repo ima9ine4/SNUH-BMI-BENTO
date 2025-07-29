@@ -869,6 +869,11 @@
             tableName: currentItem.tableName,
             fieldType: currentItem.fieldType
         } : null}
+        existingData={currentItem ? {
+            selectedItems: currentItem.selectedItems || [],
+            conditions: currentItem.conditions,
+            summary: currentItem.summary
+        } : null}
         onClose={closeModal}
         onApply={(conditions) => {
             rows = rows.map(row => {
@@ -885,7 +890,7 @@
                                                 ...item,
                                                 conditions: conditions.displayText,
                                                 summary: conditions.summary || null,
-                                                hasConditions: Boolean(conditions.displayText)
+                                                selectedItems: conditions.selectedItems || []
                                             };
                                         }
                                         return item;

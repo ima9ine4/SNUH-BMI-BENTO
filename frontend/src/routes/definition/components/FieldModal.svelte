@@ -2,6 +2,7 @@
   import LookupField from './fieldTypes/LookupField.svelte';
   export let showModal = false;
   export let fieldData = null; // { fieldName, tableName, fieldType }
+  export let existingData = null; // 기존 선택된 데이터
   export let onApply = () => {};
   export let onClose = () => {};
   let selectedData = null;
@@ -60,6 +61,7 @@
           <LookupField
             fieldName={fieldData.fieldName}
             tableName={fieldData.tableName}
+            existingData={existingData}
             onSelectionChange={handleSelectionChange}
           />
         {:else}
