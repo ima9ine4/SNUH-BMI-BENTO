@@ -49,7 +49,7 @@
     const rowStyles = [
         {
             gradient: 'from-blue-800 to-blue-950',
-            summary: 'blue-800',
+            summary: 'border-blue-800 text-blue-800',
             bar: 'bg-blue-800',
             bg: 'bg-blue-50',
             border: 'border-blue-200',
@@ -59,7 +59,7 @@
         },
         {
             gradient: 'from-blue-600 to-blue-700',
-            summary: 'blue-600',
+            summary: 'border-blue-600 text-blue-600',
             bar: 'bg-blue-600',
             bg: 'bg-blue-50',
             border: 'border-blue-200',
@@ -69,7 +69,7 @@
         },
         {
             gradient: 'from-blue-400 to-blue-500',
-            summary: 'blue-400',
+            summary: 'border-blue-400 text-blue-400',
             bar: 'bg-blue-400',
             bg: 'bg-blue-50',
             border: 'border-blue-200',
@@ -80,11 +80,7 @@
     ];
 
     function getRowStyle(index) {
-        if (index < 3) {
-            return rowStyles[index];
-        } else {
-            return rowStyles[2];
-        }
+        return rowStyles[index % 3];
     }
 
     function toggleRowType(rowId) {
@@ -542,9 +538,9 @@
                                 </div>
                             {/if}
                             
-                            <div class="px-4 gap-2 bg-slate-100 border-2 border-{rowStyle.summary} rounded-lg p-2.5 w-[180px] h-full flex flex-col justify-between shadow-sm flex-shrink-0">
+                            <div class="px-4 gap-2 bg-slate-100 border-2 {rowStyle.summary} rounded-lg p-2.5 w-[180px] h-full flex flex-col justify-between shadow-sm flex-shrink-0">
                                 <div class="flex justify-between items-center">
-                                    <div class="text-sm font-bold text-{rowStyle.summary} border-{rowStyle.summary} truncate pr-2">{row.name}</div>
+                                    <div class="text-sm font-bold {rowStyle.summary} truncate pr-2">{row.name}</div>
                                     {#if row.isLoading}
                                         <div class="flex justify-end">
                                             <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
