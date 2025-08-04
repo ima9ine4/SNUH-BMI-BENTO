@@ -863,7 +863,8 @@
         existingData={currentItem ? {
             selectedItems: currentItem.selectedItems || [],
             conditions: currentItem.conditions,
-            summary: currentItem.summary
+            summary: currentItem.summary,
+            operator: currentItem.operator || {}
         } : null}
         onClose={closeModal}
         onApply={(conditions) => {
@@ -881,7 +882,8 @@
                                                 ...item,
                                                 conditions: conditions.displayText,
                                                 summary: conditions.summary || null,
-                                                selectedItems: conditions.selectedItems || []
+                                                selectedItems: conditions.selectedItems || [],
+                                                operator: conditions.operator || {}
                                             };
                                         }
                                         return item;
