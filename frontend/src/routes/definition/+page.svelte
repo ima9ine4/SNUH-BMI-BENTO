@@ -2,9 +2,13 @@
     import CategoryTree from './components/CategoryTree.svelte';
     import FieldModal from './components/FieldModal.svelte';
     import { tick, onMount } from 'svelte';
+    import { checkCohortNameDuplicate } from './api.js';
 
     let headerHeight;
     let cohortName = '';
+    let cohortNameError = ''; // 코호트 이름 에러 메시지
+    let isCohortNameChecking = false; // 중복 확인 중인지
+    let cohortNameChecked = false; // 중복 확인을 한 번이라도 했는지
     let showModal = false;
     let selectedField = null;
     let selectedContainer = null;
@@ -479,6 +483,37 @@
             isFinalCountLoading = false;
     }
 
+    // 코호트 이름 중복 확인
+    async function checkCohortName() {
+        if (!cohortName.trim()) {
+            cohortNameError = '';
+            cohortNameChecked = false;
+            return;
+        }
+
+        isCohortNameChecking = true;
+        cohortNameError = '';
+
+        try {
+            const result = await checkCohortNameDuplicate(cohortName.trim());
+            cohortNameChecked = true;
+            
+            if (result.status === false) {
+                // 중복된 이름이 있는 경우
+                cohortNameError = '이미 사용 중인 코호트 이름입니다.';
+            } else if (result.status === true) {
+                // 사용 가능한 이름인 경우
+                cohortNameError = '';
+            }
+        } catch (error) {
+            console.error('코호트 이름 중복 확인 실패:', error);
+            cohortNameError = '이름 확인 중 오류가 발생했습니다.';
+            cohortNameChecked = true;
+        } finally {
+            isCohortNameChecking = false;
+        }
+    }
+
     onMount(() => {
         // 전역 드래그 종료 이벤트 리스너
         const handleGlobalDragEnd = () => {
@@ -507,14 +542,50 @@
         <header bind:clientHeight={headerHeight} class="fixed top-[60px] left-72 right-0 bg-white border-b border-slate-200 px-6 pt-3 pb-2 z-20 shadow-sm">
             <div class="flex items-center justify-between gap-4 w-full">
                 <h1 class="text-lg font-semibold text-slate-800">코호트 정의하기</h1>
-                <input
-                    type="text"
-                    class="flex-1 w-full px-2 py-1.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-slate-500 focus:border-transparent"
-                    placeholder="코호트 이름을 입력하세요"
-                    bind:value={cohortName}
-                />
+                <div class="flex items-center flex-1 relative">
+                    <input
+                        type="text"
+                        class="w-[72%] px-2 py-1.5 pr-8 border rounded-lg text-sm focus:outline-none focus:ring-1 focus:border-transparent transition-colors {cohortNameError ? 'border-red-500 focus:ring-red-500' : 'border-slate-300 focus:ring-slate-500'}"
+                        placeholder="코호트 이름을 입력하세요"
+                        bind:value={cohortName}
+                        on:blur={checkCohortName}
+                    />
+                    
+                    <!-- 우측 끝 상태 아이콘 -->
+                    <div class="absolute right-2 top-1/2 transform -translate-y-1/2">
+                        {#if isCohortNameChecking}
+                            <svg class="w-4 h-4 animate-spin text-blue-600" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        {:else if cohortNameError}
+                            <div class="flex flex-row items-center gap-1">
+                                <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" title={cohortNameError}>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <div class="text-sm text-red-600">
+                                    {cohortNameError}
+                                </div>
+                            </div>
+                        {:else if cohortNameChecked && cohortName.trim() && !cohortNameError}
+                            <div class="flex flex-row items-center gap-1">
+                                <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" title="사용 가능한 이름입니다">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                <div class="text-sm text-green-600">
+                                    사용 가능한 이름입니다.
+                                </div>
+                            </div>
+                        {/if}
+                    </div>
+                </div>
+                
+                
                 <div class="flex items-center gap-3 flex-shrink-0">
-                    <button class="bg-blue-800 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-semibold hover:bg-blue-900 transition-colors shadow-md">
+                    <button 
+                        class="bg-blue-800 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-semibold hover:bg-blue-900 transition-colors shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        disabled={!cohortName.trim() || cohortNameError || isCohortNameChecking}
+                    >
                         <span>코호트 생성</span>
                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"></path></svg>
                     </button>
