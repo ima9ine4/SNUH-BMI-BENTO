@@ -784,19 +784,10 @@
                                                                 >
                                                                     <div class="flex justify-between items-center gap-2">
                                                                         <span class="text-xs font-medium text-slate-800">{item.fieldName}</span>
-                                                                        {#if item.summary}
-                                                                            <span class="text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded font-medium">
-                                                                                {item.summary}
-                                                                            </span>
-                                                                        {/if}
+                                                                        <span class="text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded font-medium">
+                                                                            {item.summary}
+                                                                        </span>
                                                                     </div>
-                                                                    {#if item.conditions}
-                                                                        <div class="mt-1">
-                                                                            <span class="text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
-                                                                                {item.conditions}
-                                                                            </span>
-                                                                        </div>
-                                                                    {/if}
                                                                 </button>
                                                                 <button
                                                                     aria-label="필드 삭제"
