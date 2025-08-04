@@ -1,5 +1,9 @@
 <script>
   import LookupField from './fieldTypes/LookupField.svelte';
+  import DateField from './fieldTypes/DateField.svelte';
+  import DateTimeField from './fieldTypes/DateTimeField.svelte';
+  import RangeField from './fieldTypes/RangeField.svelte';
+  import SearchField from './fieldTypes/SearchField.svelte';
   export let showModal = false;
   export let fieldData = null; // { fieldName, tableName, fieldType }
   export let existingData = null; // 기존 선택된 데이터
@@ -9,10 +13,8 @@
 
   // 필드 타입별 width/height 결정 (타입 추가 예정)
   $: modalWidth = fieldData?.fieldType === 'lookup' ? '1000px'
-                  : fieldData?.fieldType === 'select' ? '400px'
-                  : '600px';
+                  : 'auto';
   $: modalHeight = fieldData?.fieldType === 'lookup' ? '90vh'
-                  : fieldData?.fieldType === 'select' ? 'auto'
                   : 'auto';
 
   function handleClose() {
@@ -21,7 +23,7 @@
   }
   
   function handleApply() {
-    if (selectedData) {
+    if (selectedData && !selectedData.hasError) {
       onApply(selectedData);
     }
   }
@@ -39,7 +41,7 @@
 
       <!-- 상단 공통 헤더 -->
       <div class="px-6 pt-6 pb-3 border-b border-gray-200">
-        <div class="flex justify-between items-center">
+        <div class="flex justify-between items-center gap-12">
           <div class="flex gap-4">
             <h3 class="text-lg font-semibold text-gray-800">{fieldData.fieldName} 설정</h3>
             <p class="text-sm text-gray-600 mt-1">
@@ -59,6 +61,35 @@
       <div class="flex-1 overflow-hidden px-6 py-6">
         {#if fieldData.fieldType === 'lookup'}
           <LookupField
+            fieldName={fieldData.fieldName}
+            tableName={fieldData.tableName}
+            existingData={existingData}
+            onSelectionChange={handleSelectionChange}
+          />
+        {:else if fieldData.fieldType === 'date'}
+          <DateField
+            fieldName={fieldData.fieldName}
+            tableName={fieldData.tableName}
+            existingData={existingData}
+            onSelectionChange={handleSelectionChange}
+          />
+        {:else if fieldData.fieldType === 'datetime'}
+          <DateTimeField
+            fieldName={fieldData.fieldName}
+            tableName={fieldData.tableName}
+            existingData={existingData}
+            onSelectionChange={handleSelectionChange}
+          />
+        {:else if fieldData.fieldType === 'range_int' || fieldData.fieldType === 'range_float'}
+          <RangeField
+            fieldName={fieldData.fieldName}
+            tableName={fieldData.tableName}
+            fieldType={fieldData.fieldType}
+            existingData={existingData}
+            onSelectionChange={handleSelectionChange}
+          />
+        {:else if fieldData.fieldType === 'search'}
+          <SearchField
             fieldName={fieldData.fieldName}
             tableName={fieldData.tableName}
             existingData={existingData}
@@ -87,8 +118,9 @@
           취소
         </button>
         <button
-          class="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm font-medium"
+          class="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
           on:click={handleApply}
+          disabled={!selectedData || selectedData.hasError}
           aria-label="적용"
         >
           적용

@@ -678,7 +678,7 @@
                             </div>
                             
                             <div class="flex items-center gap-3">
-                                {#if rows.length > 1}
+                                {#if rows.length > 1 && rowIndex > 0}
                                     <button 
                                         aria-label="그룹 삭제"
                                         class="p-1.5 bg-white bg-opacity-20 rounded-lg hover:bg-opacity-30 transition-colors"
@@ -784,19 +784,10 @@
                                                                 >
                                                                     <div class="flex justify-between items-center gap-2">
                                                                         <span class="text-xs font-medium text-slate-800">{item.fieldName}</span>
-                                                                        {#if item.summary}
-                                                                            <span class="text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded font-medium">
-                                                                                {item.summary}
-                                                                            </span>
-                                                                        {/if}
+                                                                        <span class="text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded font-medium">
+                                                                            {item.summary}
+                                                                        </span>
                                                                     </div>
-                                                                    {#if item.conditions}
-                                                                        <div class="mt-1">
-                                                                            <span class="text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
-                                                                                {item.conditions}
-                                                                            </span>
-                                                                        </div>
-                                                                    {/if}
                                                                 </button>
                                                                 <button
                                                                     aria-label="필드 삭제"
@@ -872,7 +863,8 @@
         existingData={currentItem ? {
             selectedItems: currentItem.selectedItems || [],
             conditions: currentItem.conditions,
-            summary: currentItem.summary
+            summary: currentItem.summary,
+            operator: currentItem.operator || {}
         } : null}
         onClose={closeModal}
         onApply={(conditions) => {
@@ -890,7 +882,8 @@
                                                 ...item,
                                                 conditions: conditions.displayText,
                                                 summary: conditions.summary || null,
-                                                selectedItems: conditions.selectedItems || []
+                                                selectedItems: conditions.selectedItems || [],
+                                                operator: conditions.operator || {}
                                             };
                                         }
                                         return item;
