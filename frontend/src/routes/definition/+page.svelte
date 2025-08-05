@@ -1,6 +1,7 @@
 <script>
     import CategoryTree from './components/CategoryTree.svelte';
     import FieldModal from './components/FieldModal.svelte';
+    import { PUBLIC_API_URI } from '$env/static/public';
     import { tick, onMount } from 'svelte';
 
     let headerHeight;
@@ -495,7 +496,7 @@
 
         try {
             const params = new URLSearchParams({ name: cohortName.trim() });
-            const response = await fetch(`${PUBLIC_BASE_API_URL}/cohorts/check-name?${params}`).then(res => res.json());
+            const response = await fetch(`${PUBLIC_API_URI}/cohort/check-name?${params}`).then(res => res.json());
 
             cohortNameChecked = true;
             
