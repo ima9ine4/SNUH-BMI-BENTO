@@ -2,7 +2,6 @@
     import CategoryTree from './components/CategoryTree.svelte';
     import FieldModal from './components/FieldModal.svelte';
     import { tick, onMount } from 'svelte';
-    import { checkCohortNameDuplicate } from './api.js';
 
     let headerHeight;
     let cohortName = '';
@@ -495,13 +494,15 @@
         cohortNameError = '';
 
         try {
-            const result = await checkCohortNameDuplicate(cohortName.trim());
+            const params = new URLSearchParams({ name: cohortName.trim() });
+            const response = await fetch(`${PUBLIC_BASE_API_URL}/cohorts/check-name?${params}`).then(res => res.json());
+
             cohortNameChecked = true;
             
-            if (result.status === false) {
+            if (response.status === false) {
                 // 중복된 이름이 있는 경우
                 cohortNameError = '이미 사용 중인 코호트 이름입니다.';
-            } else if (result.status === true) {
+            } else if (response.status === true) {
                 // 사용 가능한 이름인 경우
                 cohortNameError = '';
             }
