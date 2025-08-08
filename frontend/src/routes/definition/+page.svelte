@@ -495,8 +495,19 @@
         cohortNameError = '';
 
         try {
-            const params = new URLSearchParams({ name: cohortName.trim() });
-            const response = await fetch(`${PUBLIC_API_URI}/cohort/check-name?${params}`).then(res => res.json());
+            const requestBody = {
+                'cohortName' : cohortName.trim()
+            }
+            const response = await fetch(`${PUBLIC_API_URI}/cohort/check`, {
+                method: 'POST',
+                headers: {
+                    'accept': '*/*',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
+                }
+            ).then(res => res.json());
+            console.log('response', response);
 
             cohortNameChecked = true;
             
