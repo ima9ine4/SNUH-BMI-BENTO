@@ -550,7 +550,7 @@
     </aside>
 
     <!-- 메인 컨텐츠 -->
-    <div class="ml-72 flex-1 flex flex-col h-screen bg-slate-200">
+    <div class="ml-72 flex-1 flex flex-col h-screen bg-slate-200 min-w-0">
         <!-- 상단 헤더 -->
         <header bind:clientHeight={headerHeight} class="fixed top-[60px] left-72 right-0 bg-white border-b border-slate-200 px-6 pt-3 pb-2 z-20 shadow-sm">
             <div class="flex items-center justify-between gap-4 w-full">
@@ -696,12 +696,12 @@
         </header>
 
         <!-- 메인 콘텐츠 영역 (스크롤) -->
-        <div class="flex-1 overflow-y-auto bg-slate-200 mt-[180px] h-screen">
+        <div class="flex-1 overflow-y-auto bg-slate-200 mt-[180px] h-screen min-w-0">
         <!-- 쿼리 단계 카드들 -->
             <main class="px-5 space-y-4 py-6 overflow-y-auto h-screen">
                 {#each rows as row, rowIndex}
                     {@const style = getRowStyle(rowIndex)}
-                    <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow duration-300">
+                    <div class="bg-white rounded-lg shadow-sm border border-slate-200 hover:shadow-md transition-shadow duration-300">
                     <!-- 카드 헤더 -->
                     <div class="bg-gradient-to-r {style.gradient} px-5 py-3 text-white">
                         <div class="flex items-center justify-between">
@@ -778,9 +778,9 @@
                     </div>
                     
                     <!-- 카드 본문 -->
-                    <div class="p-4">
-                        <div class="max-w-full overflow-x-auto">
-                            <div class="flex items-center gap-0 w-max">
+                    <div class="p-4 min-w-0">
+                        <div class="max-w-full overflow-x-auto overflow-x-contain -mx-4 px-4 min-w-0">
+                            <div class="inline-flex items-center gap-0 w-max">
                                 {#each row.containers as container, containerIndex}
                                     <!-- 컨테이너 -->
                                     {#if container.isEmpty}
@@ -804,7 +804,7 @@
                                             </div>
                                         </div>
                                     {:else}
-                                        <div class="bg-white rounded-lg border {style.border} p-3 min-w-[380px] shadow-sm overflow-x-auto relative">
+                                        <div class="bg-white rounded-lg border {style.border} p-3 min-w-[380px] shadow-sm relative">
                                             <div class="flex items-center justify-between mb-2">
                                                 <div class="flex items-center gap-2">
                                                     <div class="w-5 h-5 bg-slate-300 rounded-full flex items-center justify-center">
