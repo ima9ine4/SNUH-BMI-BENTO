@@ -1,10 +1,14 @@
 <script>
     import CategoryTree from './components/CategoryTree.svelte';
     import FieldModal from './components/FieldModal.svelte';
+    import { PUBLIC_API_URI } from '$env/static/public';
     import { tick, onMount } from 'svelte';
 
     let headerHeight;
     let cohortName = '';
+    let cohortNameError = ''; // 코호트 이름 에러 메시지
+    let isCohortNameChecking = false; // 중복 확인 중인지
+    let cohortNameChecked = false; // 중복 확인을 한 번이라도 했는지
     let showModal = false;
     let selectedField = null;
     let selectedContainer = null;
@@ -135,22 +139,17 @@
         });
     }
 
-    function handleGroupNameKeydown(event) {
-        if (event.key === 'Enter') {
-            if (editingRowId && editingRowName.trim()) {
-                rows = rows.map(row => {
-                    if (row.id === editingRowId) {
-                        return { ...row, name: editingRowName.trim() };
-                    }
-                    return row;
-                });
-            }
-            editingRowId = null;
-            editingRowName = '';
-        } else if (event.key === 'Escape') {
-            editingRowId = null;
-            editingRowName = '';
+    function saveGroupName() {
+        if (editingRowId && editingRowName.trim()) {
+            rows = rows.map(row => {
+                if (row.id === editingRowId) {
+                    return { ...row, name: editingRowName.trim() };
+                }
+                return row;
+            });
         }
+        editingRowId = null;
+        editingRowName = '';
     }
 
     function ensureEmptyContainer(rowId) {
@@ -428,11 +427,6 @@
         selectedRow = null;
     }
 
-    function executeAllCohorts() {
-        // 전체 코호트 실행 로직
-        console.log('코호트 생성');
-    }
-
     async function fetchCohortPatientCounts() {
         const res = await fetch('/patient-count-testdata.json');  // 임시 더미데이터
         if (!res.ok) throw new Error('데이터를 불러올 수 없습니다');
@@ -479,6 +473,446 @@
             isFinalCountLoading = false;
     }
 
+    // API 요청을 위한 데이터 변환 함수들
+    function convertFieldTypeToApiType(fieldType) {
+        // 필드 타입을 API type으로 변환
+        const typeMapping = {
+            'condition': 'condition_occurrence',
+            'measurement': 'measurement',
+            'procedure': 'procedure_occurrence',
+            'drug': 'drug_exposure',
+            'visit': 'visit_occurrence',
+            'observation': 'observation',
+            'death': 'death',
+            'device': 'device_exposure',
+            'specimen': 'specimen',
+            'demographic': 'demographic'
+        };
+        return typeMapping[fieldType] || 'condition_occurrence';
+    }
+
+    function buildFilterCondition(item) {
+    // 사용자가 제공한 매핑 목록 기반 테이블별 컬럼 매핑 정의
+        const tableColumnMapping = {
+            'condition_era': {
+                'condition_concept_id': 'conceptset',
+                'condition_era_start_date': 'startDate',
+                'condition_era_end_date': 'endDate',
+                'condition_era_start_age': 'startAge',
+                'condition_era_end_age': 'endAge',
+                'condition_era_gender': 'gender',
+                'condition_era_status': 'conditionStatus'
+            },
+            'condition_occurrence': {
+                'condition_concept_id': 'conceptset',
+                'condition_source_value': 'source',
+                'condition_occurrence_age': 'age',
+                'condition_occurrence_gender': 'gender',
+                'condition_start_date': 'startDate',
+                'condition_end_date': 'endDate',
+                'condition_status_concept_id': 'conditionStatus',
+                'condition_type_concept_id': 'conditionType',
+                'visit_type_concept_id': 'visitType',
+                'condition_source_concept_id': 'source',
+                'provider_id': 'providerSpecialty'
+            },
+            'death': {
+                'death_concept_id': 'conceptset',
+                'death_age': 'age',
+                'death_gender': 'gender',
+                'death_date': 'date',
+                'death_type_concept_id': 'deathType',
+                'cause_concept_id': 'cause'
+            },
+            'device_exposure': {
+                'device_concept_id': 'conceptset',
+                'device_exposure_age': 'age',
+                'device_exposure_gender': 'gender',
+                'device_exposure_start_date': 'startDate',
+                'device_exposure_end_date': 'endDate',
+                'device_type_concept_id': 'deviceType',
+                'visit_type_concept_id': 'visitType',
+                'unique_device_id': 'uniqueDeviceId',
+                'quantity': 'quantity',
+                'device_source_concept_id': 'source',
+                'provider_id': 'providerSpecialty'
+            },
+            'dose_era': {
+                'drug_concept_id': 'conceptset',
+                'dose_era_start_age': 'startAge',
+                'dose_era_end_age': 'endAge',
+                'dose_era_gender': 'gender',
+                'dose_era_start_date': 'startDate',
+                'dose_era_end_date': 'endDate',
+                'unit_concept_id': 'doseUnit',
+                'dose_era_length': 'length',
+                'dose_value': 'doseValue'
+            },
+            'drug_era': {
+                'drug_concept_id': 'conceptset',
+                'drug_era_start_age': 'startAge',
+                'drug_era_end_age': 'endAge',
+                'drug_era_gender': 'gender',
+                'drug_era_start_date': 'startDate',
+                'drug_era_end_date': 'endDate',
+                'drug_era_length': 'length',
+                'drug_exposure_count': 'eraExposureCount'
+            },
+            'drug_exposure': {
+                'drug_concept_id': 'conceptset',
+                'drug_exposure_age': 'age',
+                'drug_exposure_gender': 'gender',
+                'drug_exposure_start_date': 'startDate',
+                'drug_exposure_end_date': 'endDate',
+                'drug_type_concept_id': 'drugType',
+                'visit_type_concept_id': 'visitType',
+                'stop_reason': 'stopReason',
+                'refills': 'refill',
+                'quantity': 'quantity',
+                'days_supply': 'daysSupply',
+                'route_concept_id': 'routeType',
+                'lot_number': 'lotNumber',
+                'drug_source_concept_id': 'source',
+                'provider_id': 'providerSpecialty'
+            },
+            'measurement': {
+                'measurement_concept_id': 'conceptset',
+                'measurement_age': 'age',
+                'measurement_gender': 'gender',
+                'measurement_date': 'date',
+                'measurement_type_concept_id': 'measurementType',
+                'visit_type_concept_id': 'visitType',
+                'operator_concept_id': 'operatorType',
+                'value_as_number': 'valueAsNumber',
+                'value_as_concept_id': 'valueAsConcept',
+                'unit_concept_id': 'unitType',
+                'measurement_abnormal': 'abnormal',
+                'range_low': 'rangeLow',
+                'range_high': 'rangeHigh',
+                'provider_id': 'providerSpecialty',
+                'measurement_source_concept_id': 'source'
+            },
+            'observation': {
+                'observation_concept_id': 'conceptset',
+                'observation_age': 'age',
+                'observation_gender': 'gender',
+                'observation_date': 'date',
+                'observation_type_concept_id': 'observationType',
+                'visit_type_concept_id': 'visitType',
+                'value_as_number': 'valueAsNumber',
+                'value_as_string': 'valueAsString',
+                'qualifier_concept_id': 'qualifierType',
+                'unit_concept_id': 'unitType',
+                'observation_source_concept_id': 'source',
+                'provider_id': 'providerSpecialty'
+            },
+            'observation_period': {
+                'observation_period_start_age': 'startAge',
+                'observation_period_end_age': 'endAge',
+                'observation_period_start_date': 'startDate',
+                'observation_period_end_date': 'endDate',
+                'observation_period_length': 'length',
+                'period_type_concept_id': 'periodType'
+            },
+            'procedure_occurrence': {
+                'procedure_concept_id': 'conceptset',
+                'procedure_age': 'age',
+                'procedure_gender': 'gender',
+                'procedure_date': 'startDate',
+                'procedure_type_concept_id': 'procedureType',
+                'visit_type_concept_id': 'visitType',
+                'modifier_concept_id': 'modifierType',
+                'quantity': 'quantity',
+                'procedure_source_concept_id': 'source',
+                'provider_id': 'providerSpecialty'
+            },
+            'specimen': {
+                'specimen_concept_id': 'conceptset',
+                'specimen_age': 'age',
+                'specimen_gender': 'gender',
+                'specimen_date': 'date',
+                'specimen_type_concept_id': 'specimenType',
+                'quantity': 'quantity',
+                'unit_concept_id': 'unitType',
+                'anatomic_site_concept_id': 'anatomicSiteType',
+                'disease_status_concept_id': 'diseaseStatus'
+            },
+            'visit_occurrence': {
+                'visit_concept_id': 'conceptset',
+                'visit_age': 'age',
+                'visit_gender': 'gender',
+                'visit_start_date': 'startDate',
+                'visit_end_date': 'endDate',
+                'visit_type_concept_id': 'visitType',
+                'visit_length': 'length',
+                'visit_source_concept_id': 'source',
+                'provider_id': 'providerSpecialty',
+                'place_of_service_concept_id': 'placeOfService'
+            },
+            'demographic': {
+                'gender_concept_id': 'gender',
+                'race_concept_id': 'raceType',
+                'ethnicity_concept_id': 'ethnicityType'
+            }
+        };
+
+        // 테이블명 추출
+        const tableName = item.tableName || convertFieldTypeToApiType(item.fieldType);
+        
+        // API request body 형식으로 필터 생성
+        const filter = {
+            type: tableName
+        };
+        
+        // 테이블별 컬럼 매핑 가져오기
+        const columnMapping = tableColumnMapping[tableName] || {};
+
+        // Lookup 필드 처리 (selectedItems가 있는 경우 우선 처리)
+        if (item.fieldType === 'lookup' && item.selectedItems && item.selectedItems.length > 0) {
+            const conceptsetField = columnMapping[item.fieldName];
+            if (conceptsetField) {
+                // target_concept_id만 추출하여 eq 연산자로 감싸기
+                const conceptIds = item.selectedItems.map(item => item.target_concept_id || item);
+                filter[conceptsetField] = { "eq": conceptIds };
+                return filter;
+            }
+        }
+        
+        // 날짜 필드 처리
+        if (item.fieldType === 'date' || item.fieldType === 'datetime') {            
+            if (item.operator) {
+                const dateField = columnMapping[item.fieldName];
+                if (dateField) {
+                    // 연산자 객체를 그대로 사용 (gte, lte, eq 등)
+                    filter[dateField] = item.operator;
+                    return filter;
+                }
+            }
+        }
+        
+        // 숫자 범위 필드 처리
+        if (item.fieldType === 'range_int' || item.fieldType === 'range_float') {            
+            if (item.operator) {
+                const rangeField = columnMapping[item.fieldName];
+                if(rangeField) {
+                    filter[rangeField] = item.operator;
+                    return filter;
+                }
+                return filter;
+            }
+        }
+        
+        // Search 필드 처리
+        if (item.fieldType === 'search') {
+            if (item.operator && item.operator.keywords && item.operator.keywords.length > 0) {
+                const keywordItem = item.operator.keywords[0];
+                const sourceField = columnMapping[item.fieldName];
+                if (sourceField && keywordItem.keyword) {
+                    if (keywordItem.operator === 'contains') {
+                        filter[sourceField] = { "contains": keywordItem.keyword };
+                    } else if (keywordItem.operator === 'not_contains') {
+                        filter[sourceField] = { "ncontains": keywordItem.keyword };
+                    } else if (keywordItem.operator === 'starts_with') {
+                        filter[sourceField] = { "startsWith": keywordItem.keyword };
+                    }
+                    return filter;
+                }
+            }
+        }
+        return filter;
+    }
+
+    function buildApiRequestData() {
+        const requestData = {
+            name: cohortName,
+            description: `코호트: ${cohortName}`,
+            cohortDefinition: {
+                initialGroup: {
+                    containers: []
+                },
+                comparisonGroup: {
+                    containers: []
+                }
+            },
+            temporary: false
+        };
+
+        // 각 그룹을 API containers로 변환
+        rows.forEach(row => {
+            if (row.type === 'initial') {
+                // initial 그룹: initialGroup에 그룹 하나만 추가
+                const initialContainer = {
+                    name: row.name,  // 그룹 이름
+                    filters: []
+                };
+
+                // 그룹 내의 모든 컨테이너의 아이템들을 filters에 추가
+                row.containers.forEach(containerItem => {
+                    if (!containerItem.isEmpty && containerItem.items.length > 0) {
+                        // 컨테이너별로 하나의 필터 객체 생성
+                        // filters 배열의 길이 = 컨테이너 개수
+                        const containerFilter = {
+                            type: containerItem.tableName
+                        };
+                        
+                        // 컨테이너 내의 모든 아이템들을 하나의 필터 객체에 합치기
+                        // 같은 필드명이 여러 번 나오면 마지막 값으로 덮어쓰기됨
+                        containerItem.items.forEach(item => {
+                            const filterCondition = buildFilterCondition(item);
+                            // type을 제외한 모든 필드를 containerFilter에 추가
+                            Object.keys(filterCondition).forEach(key => {
+                                if (key !== 'type') {
+                                    containerFilter[key] = filterCondition[key];
+                                }
+                            });
+                        });
+                        
+                        initialContainer.filters.push(containerFilter);
+                    }
+                });
+
+                if (initialContainer.filters.length > 0) {
+                    requestData.cohortDefinition.initialGroup.containers.push(initialContainer);
+                }
+            } else if (row.type === 'AND' || row.type === 'NOT') {
+                // AND/NOT 그룹: comparisonGroup에 추가
+                const comparisonContainer = {
+                    name: row.name,  // 그룹 이름
+                    operator: row.type === 'NOT' ? 'not' : 'and',  // NOT 그룹이면 operator 추가
+                    filters: []
+                };
+
+                // 그룹 내의 모든 컨테이너의 아이템들을 필터로 변환
+                row.containers.forEach(containerItem => {
+                    if (!containerItem.isEmpty && containerItem.items.length > 0) {
+                        // 컨테이너별로 하나의 필터 객체 생성
+                        // filters 배열의 길이 = 컨테이너 개수
+                        const containerFilter = {
+                            type: containerItem.tableName
+                        };
+                        
+                        // 컨테이너 내의 모든 아이템들을 하나의 필터 객체에 합치기
+                        // 같은 필드명이 여러 번 나오면 마지막 값으로 덮어쓰기됨
+                        containerItem.items.forEach(item => {
+                            const filterCondition = buildFilterCondition(item);
+                            // type을 제외한 모든 필드를 containerFilter에 추가
+                            Object.keys(filterCondition).forEach(key => {
+                                if (key !== 'type') {
+                                    containerFilter[key] = filterCondition[key];
+                                }
+                            });
+                        });
+                        
+                        comparisonContainer.filters.push(containerFilter);
+                    }
+                });
+
+                if (comparisonContainer.filters.length > 0) {
+                    requestData.cohortDefinition.comparisonGroup.containers.push(comparisonContainer);
+                }
+            }
+            // NOT 그룹은 현재 API에서 지원하지 않으므로 제외
+        });
+
+        return requestData;
+    }
+
+    async function createCohort() {
+        try {
+            // console.log('현재 rows 데이터:', rows);
+            const requestData = buildApiRequestData();
+            // console.log('API 요청 데이터:', requestData);
+            // console.log('API 요청 데이터 (JSON):', JSON.stringify(requestData, null, 2));
+
+            const response = await fetch(`${PUBLIC_API_URI}/cohort`, {
+                method: 'POST',
+                headers: {
+                    'accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            // console.log('코호트 생성 성공:', result);
+
+            // 성공 알림
+            alert('코호트 생성이 완료되었습니다.');
+
+            // 환자 수 정보 업데이트
+            if (result.containerCounts) {
+                rows = rows.map((row, idx) => {
+                    const patientCount = result.containerCounts[idx] ?? 0;
+                    const patientBase = idx !== 0 ? result.containerCounts[idx - 1] ?? 0 : result.containerCounts[idx] ?? 0;
+                    const patientPercent = patientBase > 0 ? (patientCount / patientBase) * 100 : 0;
+                    return {
+                        ...row,
+                        patientCount: patientCount,
+                        patientBase: patientBase,
+                        patientPercent: patientPercent,
+                        isLoading: false
+                    };
+                });
+
+                finalPatientBase = result.totalPatients;
+                finalPatientCount = result.finalPatientCount;
+                finalPatientPercent = finalPatientCount / finalPatientBase * 100;
+            }
+
+        } catch (error) {
+            // console.error('코호트 생성 실패:', error);
+            alert('코호트 생성에 실패했습니다: ' + error.message);
+        }
+    }
+
+    // 코호트 이름 중복 확인
+    async function checkCohortName() {
+        if (!cohortName.trim()) {
+            cohortNameError = '';
+            cohortNameChecked = false;
+            return;
+        }
+
+        isCohortNameChecking = true;
+        cohortNameError = '';
+
+        try {
+            const requestBody = {
+                'cohortName' : cohortName.trim()
+            }
+            const response = await fetch(`${PUBLIC_API_URI}/cohort/check`, {
+                method: 'POST',
+                headers: {
+                    'accept': '*/*',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
+                }
+            ).then(res => res.json());
+            console.log('response', response);
+
+            cohortNameChecked = true;
+            
+            if (response.status === false) {
+                // 중복된 이름이 있는 경우
+                cohortNameError = '이미 사용 중인 코호트 이름입니다.';
+            } else if (response.status === true) {
+                // 사용 가능한 이름인 경우
+                cohortNameError = '';
+            }
+        } catch (error) {
+            console.error('코호트 이름 중복 확인 실패:', error);
+            cohortNameError = '이름 확인 중 오류가 발생했습니다.';
+            cohortNameChecked = true;
+        } finally {
+            isCohortNameChecking = false;
+        }
+    }
+
     onMount(() => {
         // 전역 드래그 종료 이벤트 리스너
         const handleGlobalDragEnd = () => {
@@ -502,22 +936,57 @@
     </aside>
 
     <!-- 메인 컨텐츠 -->
-    <div class="ml-72 flex-1 flex flex-col h-screen bg-slate-200">
+    <div class="ml-72 flex-1 flex flex-col h-screen bg-slate-200 min-w-0">
         <!-- 상단 헤더 -->
         <header bind:clientHeight={headerHeight} class="fixed top-[60px] left-72 right-0 bg-white border-b border-slate-200 px-6 pt-3 pb-2 z-20 shadow-sm">
             <div class="flex items-center justify-between gap-4 w-full">
                 <h1 class="text-lg font-semibold text-slate-800">코호트 정의하기</h1>
-                <input
-                    type="text"
-                    class="flex-1 w-full px-2 py-1.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-slate-500 focus:border-transparent"
-                    placeholder="코호트 이름을 입력하세요"
-                    bind:value={cohortName}
-                />
-                <div class="flex items-center gap-3 flex-shrink-0">
-                    <button class="bg-blue-800 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-semibold hover:bg-blue-900 transition-colors shadow-md">
-                        <span>코호트 생성</span>
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"></path></svg>
-                    </button>
+                <div class="flex items-center flex-1 relative">
+                    <input
+                        type="text"
+                        class="w-[72%] px-2 py-1.5 pr-8 border rounded-lg text-sm focus:outline-none focus:ring-1 focus:border-transparent transition-colors {cohortNameError ? 'border-red-500 focus:ring-red-500' : 'border-slate-300 focus:ring-slate-500'}"
+                        placeholder="코호트 이름을 입력하세요"
+                        bind:value={cohortName}
+                        on:blur={checkCohortName}
+                    />
+                    
+                    <!-- 우측 끝 상태 아이콘 -->
+                    <div class="absolute right-2 top-1/2 transform -translate-y-1/2">
+                        {#if isCohortNameChecking}
+                            <svg class="w-4 h-4 animate-spin text-blue-600" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        {:else if cohortNameError}
+                            <div class="flex flex-row items-center gap-1">
+                                <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" title={cohortNameError}>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <div class="text-sm text-red-600">
+                                    {cohortNameError}
+                                </div>
+                            </div>
+                        {:else if cohortNameChecked && cohortName.trim() && !cohortNameError}
+                            <div class="flex flex-row items-center gap-1">
+                                <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" title="사용 가능한 이름입니다">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                <div class="text-sm text-green-600">
+                                    사용 가능한 이름입니다.
+                                </div>
+                            </div>
+                        {/if}
+                    </div>
+                </div>
+                <div class="flex items-center gap-13 flex-shrink-0">
+                <button 
+                    class="bg-blue-800 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-semibold hover:bg-blue-900 transition-colors shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    disabled={!cohortName.trim() || cohortNameError || isCohortNameChecking}
+                    on:click={createCohort}
+                >
+                    <span>코호트 생성</span>
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"></path></svg>
+                </button>
                 </div>
             </div>
             
@@ -612,12 +1081,12 @@
         </header>
 
         <!-- 메인 콘텐츠 영역 (스크롤) -->
-        <div class="flex-1 overflow-y-auto bg-slate-200 mt-[180px] h-screen">
+        <div class="flex-1 overflow-y-auto bg-slate-200 mt-[180px] h-screen min-w-0">
         <!-- 쿼리 단계 카드들 -->
             <main class="px-5 space-y-4 py-6 overflow-y-auto h-screen">
                 {#each rows as row, rowIndex}
                     {@const style = getRowStyle(rowIndex)}
-                    <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow duration-300">
+                    <div class="bg-white rounded-lg shadow-sm border border-slate-200 hover:shadow-md transition-shadow duration-300">
                     <!-- 카드 헤더 -->
                     <div class="bg-gradient-to-r {style.gradient} px-5 py-3 text-white">
                         <div class="flex items-center justify-between">
@@ -653,7 +1122,14 @@
                                                 class="bg-white bg-opacity-90 text-gray-800 px-2 py-0.5 border border-white border-opacity-50 rounded text-sm focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 focus:border-transparent w-56"
                                                 data-editing-row={row.id}
                                                 bind:value={editingRowName}
-                                                on:keydown={handleGroupNameKeydown}
+                                                on:keydown={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        saveGroupName();
+                                                    } else if (e.key === 'Escape') {
+                                                        editingRowId = null;
+                                                        editingRowName = '';
+                                                    }
+                                                }}
                                                 on:blur={saveGroupName}
                                             />
                                         {:else}
@@ -694,9 +1170,9 @@
                     </div>
                     
                     <!-- 카드 본문 -->
-                    <div class="p-4">
-                        <div class="max-w-full overflow-x-auto">
-                            <div class="flex items-center gap-0 w-max">
+                    <div class="p-4 min-w-0">
+                        <div class="max-w-full overflow-x-auto overflow-x-contain -mx-4 px-4 min-w-0">
+                            <div class="inline-flex items-center gap-0 w-max">
                                 {#each row.containers as container, containerIndex}
                                     <!-- 컨테이너 -->
                                     {#if container.isEmpty}
@@ -720,7 +1196,7 @@
                                             </div>
                                         </div>
                                     {:else}
-                                        <div class="bg-white rounded-lg border {style.border} p-3 min-w-[380px] shadow-sm overflow-x-auto relative">
+                                        <div class="bg-white rounded-lg border {style.border} p-3 min-w-[380px] shadow-sm relative">
                                             <div class="flex items-center justify-between mb-2">
                                                 <div class="flex items-center gap-2">
                                                     <div class="w-5 h-5 bg-slate-300 rounded-full flex items-center justify-center">

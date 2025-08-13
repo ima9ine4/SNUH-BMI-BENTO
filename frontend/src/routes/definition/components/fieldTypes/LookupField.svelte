@@ -1,5 +1,6 @@
 <script>
 	import { onMount, onDestroy } from "svelte";
+	import { PUBLIC_API_URI } from '$env/static/public';
 
   export let fieldName = "";
   export let tableName = "";
@@ -13,6 +14,14 @@
     selectedItems = [...existingData.selectedItems];
   }
 
+  // API 관련 상태
+  let isLoading = false;
+  let apiData = [];
+  let totalCount = 0;
+  let currentPage = 0;
+  const pageSize = 100;
+
+  // 검색 관련 상태
   let searchKeyword = ""; // 통합 검색
   let searchConceptId = "";
   let searchConceptName = "";
@@ -21,56 +30,70 @@
   let searchVocabulary = "";
   
   let openAccordion = {}; // 선택된 항목 아코디언 토글 열림 상태 추적
-  
-  // 임시 데이터
-  const sampleData = [
-    { snuhId: "10388", snuhName: "유방주위의 선형 통증", conceptId: "73819", conceptName: "Pain of breast", vocabulary: "SNOMED" },
-    { snuhId: "10389", snuhName: "poisoning mushroom", conceptId: "437434", conceptName: "Toxic effect from eating mushrooms", vocabulary: "SNOMED" },
-    { snuhId: "1039", snuhName: "discharge, anus", conceptId: "4092541", conceptName: "Discharge from anus", vocabulary: "SNOMED" },
-    { snuhId: "10390", snuhName: "Endometrial cancer IIIc", conceptId: "4095749", conceptName: "Malignant neoplasm of endometrium of corpus uteri", vocabulary: "SNOMED" },
-    { snuhId: "10391", snuhName: "Endometrial cancer IV a", conceptId: "4095749", conceptName: "Malignant neoplasm of endometrium of corpus uteri", vocabulary: "SNOMED" },
-    { snuhId: "10392", snuhName: "Endometrial cancer IV b", conceptId: "4095749", conceptName: "Malignant neoplasm of endometrium of corpus uteri", vocabulary: "SNOMED" },
-    { snuhId: "10393", snuhName: "Deformity, U/E", conceptId: "4186162", conceptName: "Deformity of upper limb", vocabulary: "SNOMED" },
-    { snuhId: "10394", snuhName: "Deformity, L/E", conceptId: "42709843", conceptName: "Deformity of lower limb", vocabulary: "SNOMED" },
-    { snuhId: "10395", snuhName: "Deformity, others", conceptId: "4168498", conceptName: "Deformity", vocabulary: "SNOMED" },
-    { snuhId: "10396", snuhName: "Pain", conceptId: "4329041", conceptName: "Pain", vocabulary: "SNOMED" },
-    { snuhId: "10397", snuhName: "눈물구멍에서 눈물이 난다.", conceptId: "4087815", conceptName: "Lacrimal punctum finding", vocabulary: "SNOMED" },
-    { snuhId: "10398", snuhName: "라식후 시력이 다시 떨어진다", conceptId: "4023180", conceptName: "Sight deteriorating", vocabulary: "SNOMED" },
-    { snuhId: "10399", snuhName: "어두운 방에 들어가면 흐리다", conceptId: "4081307", conceptName: "Dim vision", vocabulary: "SNOMED" },
-    { snuhId: "104", snuhName: "abnormality, sight", conceptId: "373786", conceptName: "Abnormal vision", vocabulary: "SNOMED" },
-    { snuhId: "10400", snuhName: "poisoning plant", conceptId: "433933", conceptName: "Toxic effect of plant", vocabulary: "SNOMED" },
-    { snuhId: "10401", snuhName: "눈에서 박동이 느껴진다", conceptId: "4201555", conceptName: "Finding of sensation of eye", vocabulary: "SNOMED" },
-    { snuhId: "10403", snuhName: "의안이 안들어간다", conceptId: "4199941", conceptName: "Unstable artificial eye", vocabulary: "SNOMED" },
-    { snuhId: "10404", snuhName: "눈이 안떠진다", conceptId: "376125", conceptName: "Disorder of eyelid", vocabulary: "SNOMED" },
-    { snuhId: "10405", snuhName: "눈주위에 뭐가 만져진다", conceptId: "4084863", conceptName: "Flicking hands near eyes", vocabulary: "SNOMED" },
-    { snuhId: "10406", snuhName: "초점이 안맞는다", conceptId: "4080827", conceptName: "Poor focus", vocabulary: "SNOMED" },
-    { snuhId: "10407", snuhName: "둘로 보인다", conceptId: "373474", conceptName: "Diplopia", vocabulary: "SNOMED" },
-    { snuhId: "10408", snuhName: "눈가가 짓무른다", conceptId: "4196702", conceptName: "Ulcer of eyelid", vocabulary: "SNOMED" },
-    { snuhId: "10409", snuhName: "흰자위에 뭐가 생겼다", conceptId: "4038502", conceptName: "Eye / vision finding", vocabulary: "SNOMED" },
-    { snuhId: "10410", snuhName: "ageusia", conceptId: "4289517", conceptName: "Loss of taste", vocabulary: "SNOMED" },
-    { snuhId: "10411", snuhName: "burn inhalation", conceptId: "196284", conceptName: "Burn of mouth and pharynx", vocabulary: "SNOMED" },
-    { snuhId: "10412", snuhName: "dysgeusia", conceptId: "436235", conceptName: "Taste sense altered", vocabulary: "SNOMED" },
-    { snuhId: "10413", snuhName: "earfullness", conceptId: "4082416", conceptName: "Ear finding", vocabulary: "SNOMED" },
-    { snuhId: "10415", snuhName: "foul odor, mouth", conceptId: "4271462", conceptName: "Offensive body odor", vocabulary: "SNOMED" },
-    { snuhId: "10416", snuhName: "foul odor, nose", conceptId: "4271462", conceptName: "Offensive body odor", vocabulary: "SNOMED" },
-    { snuhId: "10417", snuhName: "frequent URI", conceptId: "4181583", conceptName: "Upper respiratory infection", vocabulary: "SNOMED" }
-  ];
 
+  // API 호출 함수
+  async function fetchConceptData(page = 0) {
+    isLoading = true;
+    
+    try {
+      const requestBody = {
+        table: tableName,
+        column: fieldName,
+        query: searchKeyword || "",
+        source_code: searchSnuhId || "",
+        source_code_description: searchSnuhName || "",
+        target_concept_id: searchConceptId || "",
+        target_concept_name: searchConceptName || "",
+        vocabulary_id: searchVocabulary || "",
+        domain: "",
+        page: page,
+        limit: pageSize
+      };
 
-  // 필터링된 데이터
-  $: filteredData = sampleData.filter(item => 
-    !searchKeyword || 
-    item.conceptId.includes(searchConceptId) ||
-    item.conceptName.includes(searchConceptName) ||
-    item.snuhId.includes(searchSnuhId) ||
-    item.snuhName.includes(searchSnuhName) ||
-    item.vocabulary.includes(searchVocabulary)
-  );
+      const response = await fetch(`${PUBLIC_API_URI}/concept/search`, {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+      });
 
-  // 선택된 항목을 conceptId 기준으로 그룹핑
+      if (!response.ok) {
+        throw new Error('API 호출 실패');
+      }
+
+      const data = await response.json();
+      apiData = data.concepts || [];
+      totalCount = data.total || 0;
+      currentPage = page;
+
+    } catch (error) {
+      console.error('API 호출 오류:', error);
+      apiData = [];
+      totalCount = 0;
+    } finally {
+      isLoading = false;
+    }
+  }
+
+  // 검색 실행 함수
+  function handleSearch() {
+    fetchConceptData(0);
+  }
+
+  // 페이지 변경 함수
+  function handlePageChange(page) {
+    fetchConceptData(page);
+  }
+
+  // 전체 페이지 수 계산
+  $: totalPages = Math.ceil(totalCount / pageSize);
+
+  // 선택된 항목을 target_concept_id 기준으로 그룹핑
   $: selectedGrouped = selectedItems.reduce((acc, item) => {
-    if (!acc[item.conceptId]) acc[item.conceptId] = { conceptName: item.conceptName, snuhs: [] };
-    acc[item.conceptId].snuhs.push({ snuhId: item.snuhId, snuhName: item.snuhName });
+    if (!acc[item.target_concept_id]) acc[item.target_concept_id] = { conceptName: item.target_concept_name, snuhs: [] };
+    acc[item.target_concept_id].snuhs.push({ snuhId: item.source_code, snuhName: item.source_code_description });
     return acc;
   }, {});
 
@@ -83,26 +106,26 @@
 
   // 항목 선택/해제
   function toggleItem(item) {
-    const sameConceptItems = sampleData.filter(data => data.conceptId === item.conceptId);
-    const isCurrentlySelected = selectedItems.some(selected => selected.conceptId === item.conceptId);
+    const sameConceptItems = apiData.filter(data => data.target_concept_id === item.target_concept_id);
+    const isCurrentlySelected = selectedItems.some(selected => selected.target_concept_id === item.target_concept_id);
     
     if (isCurrentlySelected) {
-      // 같은 conceptId를 가진 모든 항목 제거
-      selectedItems = selectedItems.filter(selected => selected.conceptId !== item.conceptId);
+      // 같은 target_concept_id를 가진 모든 항목 제거
+      selectedItems = selectedItems.filter(selected => selected.target_concept_id !== item.target_concept_id);
     } else {
-      // 같은 conceptId를 가진 모든 항목 추가
+      // 같은 target_concept_id를 가진 모든 항목 추가
       selectedItems = [...selectedItems, ...sameConceptItems];
     }
   }
 
   // 선택된 항목 제거
   function removeSelected(item) {
-    selectedItems = selectedItems.filter(selected => selected.conceptId !== item.conceptId);
+    selectedItems = selectedItems.filter(selected => selected.target_concept_id !== item.target_concept_id);
   }
 
   // 항목이 선택되었는지 확인
   function isSelected(item) {
-    return selectedItems.some(selected => selected.conceptId === item.conceptId);
+    return selectedItems.some(selected => selected.target_concept_id === item.target_concept_id);
   }
 
   // selectedItems가 변경될 때마다 부모에게 알림
@@ -123,6 +146,8 @@
 
   onMount(() => {
     document.body.style.overflow = 'hidden'; // 모달 열릴 때 스크롤 방지
+    // 초기 데이터 로드
+    fetchConceptData(0);
   });
 
   onDestroy(() => {
@@ -137,19 +162,25 @@
     <div class="basis-2/3 min-w-0 shrink-0 border border-gray-200 rounded-lg flex flex-col min-h-0 mr-4">
       <!-- 검색 영역 -->
       <div class="bg-gray-50 px-4 pb-0 pt-2 border-b border-gray-200 rounded-t-lg">
-        <div class="flex items-center gap-2 mb-2">
-          <span class="text-sm font-medium text-gray-700">{filteredData.length} / {sampleData.length} 건</span>
-          <div class="flex-1"></div>
-          <div class="relative">
-            <svg class="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-            </svg>
-            <input 
-              type="text" 
-              bind:value={searchKeyword}
-              placeholder="통합 검색"
-              class="w-full h-6 pl-8 pr-4 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-xs"
-            />
+        <div class="flex items-center justify-between gap-2 mb-2">
+          <span class="text-sm font-medium text-gray-700">{apiData.length} / {totalCount} 건</span>
+          <div class="flex items-center gap-2">
+            <p>
+              <span class="text-xs text-red-600">*</span>
+              <span class="text-xs text-gray-600">검색 후 엔터를 눌러주세요</span>
+            </p>
+            <div class="relative">
+              <svg class="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+              </svg>
+              <input 
+                type="text" 
+                bind:value={searchKeyword}
+                placeholder="통합 검색"
+                class="w-48 h-8 pl-8 pr-4 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-xs"
+                on:keydown={(e) => e.key === 'Enter' && handleSearch()}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -180,6 +211,7 @@
             class="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none"
             placeholder="concept id"
             bind:value={searchConceptId}
+            on:keydown={(e) => e.key === 'Enter' && handleSearch()}
           />
         </div>
         
@@ -189,6 +221,7 @@
             class="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none"
             placeholder="concept name"
             bind:value={searchConceptName}
+            on:keydown={(e) => e.key === 'Enter' && handleSearch()}
           />
         </div>
         
@@ -198,6 +231,7 @@
             class="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none"
             placeholder="snuh id"
             bind:value={searchSnuhId}
+            on:keydown={(e) => e.key === 'Enter' && handleSearch()}
           />
         </div>
         
@@ -207,6 +241,7 @@
             class="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none"
             placeholder="snuh name"
             bind:value={searchSnuhName}
+            on:keydown={(e) => e.key === 'Enter' && handleSearch()}
           />
         </div>
         
@@ -216,36 +251,24 @@
             class="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none"
             placeholder="vocabulary"
             bind:value={searchVocabulary}
+            on:keydown={(e) => e.key === 'Enter' && handleSearch()}
           />
         </div>
       </div>
   
       <!-- 테이블 본문 -->
       <div class="flex-1 overflow-y-auto min-h-0">
-      {#each filteredData as item}
-        <div class="flex items-start px-2 py-2 border-b border-gray-100 hover:bg-gray-50 transition-colors text-sm cursor-pointer text-center"
-              on:click={() => toggleItem(item)}
-              on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && toggleItem(item)}
-              role="button"
-              tabindex="0"
-              >
-          <div class="w-[5%] self-center">
-            <input 
-              type="checkbox" 
-              checked={isSelected(item)}
-              on:change={() => toggleItem(item)}
-              class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-            />
+        {#if isLoading}
+          <div class="flex items-center justify-center py-8">
+            <div class="text-center">
+              <svg class="w-8 h-8 animate-spin mx-auto mb-2 text-blue-600" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <p class="text-sm text-gray-500">데이터를 불러오는 중...</p>
+            </div>
           </div>
-          <div class="w-[15%] px-1.5 font-medium text-gray-900 line-clamp-3 whitespace-normal break-words self-center" title={item.conceptId}>{item.conceptId}</div>
-          <div class="w-[25%] px-1.5 text-gray-700 text-left self-center" title={item.conceptName}>{item.conceptName}</div>
-          <div class="w-[15%] px-1.5 font-medium text-gray-900 line-clamp-3 whitespace-normal break-words self-center" title={item.snuhId}>{item.snuhId}</div>
-          <div class="w-[25%] px-1.5 text-gray-700 text-left self-center" title={item.snuhName}>{item.snuhName}</div>
-          <div class="w-[15%] px-1.5 text-gray-700 line-clamp-3 whitespace-normal break-words self-center" title={item.vocabulary}>{item.vocabulary}</div>
-        </div>
-      {/each}
-        
-        {#if filteredData.length === 0}
+        {:else if apiData.length === 0}
           <div class="flex items-center justify-center py-8 text-gray-400">
             <div class="text-center">
               <svg class="w-12 h-12 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -254,18 +277,123 @@
               <p class="text-sm">검색 결과가 없습니다</p>
             </div>
           </div>
+        {:else}
+          {#each apiData as item}
+            <div class="flex items-start px-2 py-2 border-b border-gray-100 hover:bg-gray-50 transition-colors text-sm cursor-pointer text-center"
+                  on:click={() => toggleItem(item)}
+                  on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && toggleItem(item)}
+                  role="button"
+                  tabindex="0"
+                  >
+              <div class="w-[5%] self-center">
+                <input 
+                  type="checkbox" 
+                  checked={isSelected(item)}
+                  on:change={() => toggleItem(item)}
+                  class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+              </div>
+                             <div class="w-[15%] px-1.5 font-medium text-gray-900 line-clamp-3 whitespace-normal break-words self-center" title={item.target_concept_id}>{item.target_concept_id}</div>
+               <div class="w-[25%] px-1.5 text-gray-700 text-left self-center" title={item.target_concept_name}>{item.target_concept_name}</div>
+               <div class="w-[15%] px-1.5 font-medium text-gray-900 line-clamp-3 whitespace-normal break-words self-center" title={item.source_code}>{item.source_code}</div>
+               <div class="w-[25%] px-1.5 text-gray-700 text-left self-center" title={item.source_code_description}>{item.source_code_description}</div>
+               <div class="w-[15%] px-1.5 text-gray-700 line-clamp-3 whitespace-normal break-words self-center" title={item.vocabulary_id}>{item.vocabulary_id}</div>
+            </div>
+          {/each}
         {/if}
+      </div>
+
+      <!-- 페이지네이션 -->
+      {#if totalPages > 1}
+        <div class="flex items-center justify-between px-4 py-3 bg-gray-50 border-t border-gray-200">
+          <div class="text-sm text-gray-700">
+            페이지 {currentPage + 1} / {totalPages} (총 {totalCount}건)
+          </div>
+          <div class="flex items-center gap-1">
+            <!-- 첫 페이지 버튼 -->
+            <button 
+              aria-label="첫 페이지"
+              tabindex="0"
+              class="px-2 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              on:click={() => handlePageChange(0)}
+              disabled={currentPage === 0 || isLoading}
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
+              </svg>
+            </button>
+            
+            <!-- 이전 페이지 버튼 -->
+            <button 
+              aria-label="이전 페이지"
+              tabindex="0"
+              class="px-2 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              on:click={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 0 || isLoading}
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+              </svg>
+            </button>
+            
+            <!-- 페이지 번호들 -->
+            {#each Array.from({length: Math.min(5, totalPages)}, (_, i) => {
+              const startPage = Math.max(0, Math.min(currentPage - 2, totalPages - 5));
+              return startPage + i;
+            }) as pageNum}
+              <button 
+                class="px-3 py-1 text-sm border rounded {pageNum === currentPage ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 hover:bg-gray-100'}"
+                on:click={() => handlePageChange(pageNum)}
+                disabled={isLoading}
+              >
+                {pageNum + 1}
+              </button>
+            {/each}
+            
+            <!-- 다음 페이지 버튼 -->
+            <button 
+              aria-label="다음 페이지"
+              tabindex="0"
+              class="px-2 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              on:click={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages - 1 || isLoading}
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+              </svg>
+            </button>
+            
+            <!-- 마지막 페이지 버튼 -->
+            <button 
+              aria-label="마지막 페이지"
+              tabindex="0"
+              class="px-2 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              on:click={() => handlePageChange(totalPages - 1)}
+              disabled={currentPage === totalPages - 1 || isLoading}
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"/>
+              </svg>
+            </button>
+          </div>
         </div>
+      {/if}
     </div>
 
     <!-- 우측: 선택된 항목들 -->
     <div class="basis-1/3 min-w-0 shrink-0 border border-gray-200 rounded-lg flex flex-col overflow-hidden">
-      <div class="flex flex-row items-center justify-between bg-gray-50 px-4 py-3 border-b border-gray-200 rounded-t-lg">
-        <h5 class="font-medium text-gray-800 text-sm">선택된 항목</h5>
-        <div class="flex flex-col text-right">
-          <p class="text-xs text-gray-600">Concept ID {Object.keys(selectedGrouped).length}개</p>
-          <p class="text-xs text-gray-600">SNUH ID {selectedItems.length}개</p>
+      <div class="flex flex-col bg-gray-50 px-4 pt-3 pb-1 border-b border-gray-200 rounded-t-lg">
+        <div class="flex flex-row items-center justify-between">
+          <h5 class="font-medium text-gray-800 text-sm">선택된 항목</h5>
+          <div class="flex flex-col text-right">
+            <p class="text-xs text-gray-600">Concept ID {Object.keys(selectedGrouped).length}개</p>
+            <p class="text-xs text-gray-600">SNUH ID {selectedItems.length}개</p>
+          </div>
         </div>
+        <p>
+          <span class="text-xs text-red-600">*</span>
+          <span class="text-[11px] text-gray-600">SNUH ID가 아닌 Concept ID를 기준으로 적용됩니다.</span>
+        </p>
       </div>
       <div class="flex-1 overflow-y-auto p-2 space-y-1 min-h-[300px] overflow-x-hidden">
         {#if selectedItems.length === 0}
@@ -298,7 +426,7 @@
                 <button
                   aria-label="선택 항목 제거"
                   class="text-blue-500 hover:text-red-500"
-                  on:click={() => removeSelected({ conceptId })}
+                  on:click={() => removeSelected({ target_concept_id: conceptId })}
                 >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
