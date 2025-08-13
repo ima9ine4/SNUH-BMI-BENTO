@@ -427,11 +427,6 @@
         selectedRow = null;
     }
 
-    function executeAllCohorts() {
-        // 전체 코호트 실행 로직
-        console.log('코호트 생성');
-    }
-
     async function fetchCohortPatientCounts() {
         const res = await fetch('/patient-count-testdata.json');  // 임시 더미데이터
         if (!res.ok) throw new Error('데이터를 불러올 수 없습니다');
