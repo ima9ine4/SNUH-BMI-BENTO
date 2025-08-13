@@ -48,7 +48,7 @@
     try {
       const requestBody = {
         table_name: tableName,
-        column_table: fieldName,
+        column_name: fieldName,
         query: {
           [keywordItem.operator]: keywordItem.keyword
         }
