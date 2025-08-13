@@ -70,8 +70,8 @@
       const data = await response.json();
       
       keywordCount = {
-        count: data.queryCount[0].total || 0,
-        total: data.totalCount[0].total || 0
+        count: data.queryCount || 0,
+        total: data.totalCount || 0
       };
        
      } catch (error) {
