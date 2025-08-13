@@ -139,22 +139,17 @@
         });
     }
 
-    function handleGroupNameKeydown(event) {
-        if (event.key === 'Enter') {
-            if (editingRowId && editingRowName.trim()) {
-                rows = rows.map(row => {
-                    if (row.id === editingRowId) {
-                        return { ...row, name: editingRowName.trim() };
-                    }
-                    return row;
-                });
-            }
-            editingRowId = null;
-            editingRowName = '';
-        } else if (event.key === 'Escape') {
-            editingRowId = null;
-            editingRowName = '';
+    function saveGroupName() {
+        if (editingRowId && editingRowName.trim()) {
+            rows = rows.map(row => {
+                if (row.id === editingRowId) {
+                    return { ...row, name: editingRowName.trim() };
+                }
+                return row;
+            });
         }
+        editingRowId = null;
+        editingRowName = '';
     }
 
     function ensureEmptyContainer(rowId) {
@@ -737,7 +732,14 @@
                                                 class="bg-white bg-opacity-90 text-gray-800 px-2 py-0.5 border border-white border-opacity-50 rounded text-sm focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 focus:border-transparent w-56"
                                                 data-editing-row={row.id}
                                                 bind:value={editingRowName}
-                                                on:keydown={handleGroupNameKeydown}
+                                                on:keydown={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        saveGroupName();
+                                                    } else if (e.key === 'Escape') {
+                                                        editingRowId = null;
+                                                        editingRowName = '';
+                                                    }
+                                                }}
                                                 on:blur={saveGroupName}
                                             />
                                         {:else}
